@@ -5,7 +5,7 @@ class Param:
     def __init__(self):
         self.dt = 0.1                               # control frequency, 10 Hz
         self.Nsim = int(np.ceil(65 / self.dt))      # Total simulation time + Planning time
-        self.mode = 2                               # mode 1: zigzag, mode 2: circling
+        self.mode = 1                               # mode 1: zigzag, mode 2: circling
         self.V_c = 0.0                              # Ocean current velocity
         self.beta_c = 1.0                           # Ocean current direction
 
