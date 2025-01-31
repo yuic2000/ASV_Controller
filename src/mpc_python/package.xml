@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>mpc_python</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="yuic@umich.edu">yui</maintainer>
+  <license>TODO: License declaration</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>vrx_gz</depend>
+  <depend>numpy</depend>
+  <depend>scipy</depend>
+  <depend>osqp</depend>
+  <depend>sim_mpc</depend>
+  <depend>eMPC</depend>
+  <depend>eMPCCost</depend>
+  <depend>eMPCConstraints</depend>
+  <depend>otter_true</depend>
+  <depend>LieGroup</depend>
+  <depend>gnc</depend>
+  <depend>param</depend>
+
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
