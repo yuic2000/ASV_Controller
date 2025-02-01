@@ -7,7 +7,7 @@ class Param:
         self.Nsim = int(np.ceil(65 / self.dt))      # Total simulation time + Planning time
         self.mode = 1                               # mode 1: zigzag, mode 2: circling
         self.V_c = 0.0                              # Ocean current velocity
-        self.beta_c = 1.0                           # Ocean current direction
+        self.beta_c = 0.0                           # Ocean current direction
 
         self.Nx = 12                                # dimension x   
         self.Nu = 2                                 # dimension of u
@@ -20,7 +20,7 @@ class Param:
         self.umax = np.ones(self.Nu) * 115
         self.umin = -np.ones(self.Nu) * 65
 
-        # Mass matrix
+        # Mass matrix, from Lie Group MPC paper, original
         self.I = np.array([
             [17.1572, 0, 4.4, 0, 11, 0],
             [0, 37.07, 0, -11, 0, -11],
@@ -29,6 +29,15 @@ class Param:
             [11, 0, 11, 0, 137.5, 0],
             [0, -11, 0, 0, 0, 110]
         ])
+        # self.I = np.array([                   # from Otter.m, added by yui Feb 1 2025
+        #     [55.0, 0, 0, 0, -11.0, 0],
+        #     [0, 55.0, 0, 11.0, 0, 11.0],
+        #     [0, 0, 55.0, 0, -11.0, 0],
+        #     [0, 11.0, 0, 14.6643, 0, 4.4],
+        #     [-11.0, 0, -11.0, 0, 22.55, 0],
+        #     [0, 11.0, 0, 4.4, 0, 18.15]
+        # ])
+
 
         # MPC cost matrices
         self.P = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 10

@@ -25,17 +25,36 @@ def eMPCConstraints(xid, p0, x0, param):
     I_inv = np.linalg.inv(I)
     
     for k in range(Nt):
+        # Hydrodynamic Damping Matrix
         D_t = D.copy()
         D_t[2, 2] -= 45.265 * (10 * abs(xid[k, 2]))
 
-        Irb = np.array([
-            [55.0, 0, 0, 0, -11.0, 0],
-            [0, 55.0, 0, 11.0, 0, 11.0],
-            [0, 0, 55.0, 0, -11.0, 0],
-            [0, 11.0, 0, 14.6643, 0, 4.4],
-            [-11.0, 0, -11.0, 0, 22.55, 0],
-            [0, 11.0, 0, 4.4, 0, 18.15]
+        # Rigid Body Mass and Inertia Matrix, from Otter.m, original
+        # Irb = np.array([
+        #     [55.0, 0, 0, 0, -11.0, 0],
+        #     [0, 55.0, 0, 11.0, 0, 11.0],
+        #     [0, 0, 55.0, 0, -11.0, 0],
+        #     [0, 11.0, 0, 14.6643, 0, 4.4],
+        #     [-11.0, 0, -11.0, 0, 22.55, 0],
+        #     [0, 11.0, 0, 4.4, 0, 18.15]
+        # ])
+        Irb = np.array([                     # from vrx simulation, added by yui Feb 1 2025
+            [250.18,   0,       0,      0,      -11.0,         0],
+            [0,     250.18,     0,     11.0,      0,        11.0],
+            [0,        0,     250.18,   0,      -11.0,         0],
+            [0,       11.0,     0,   225.1712,  0.12162, 0.99187],
+            [-11.0,    0,     -11.0,  0.12162,  454.141, 0.29216],
+            [0,       11.0,     0,    0.99187,  0.29216,499.7524]
         ])
+        # Irb = np.array([                  # from Lie MPC, added by yui Feb 1 2025
+        #     [17.1572, 0, 4.4, 0, 11, 0],
+        #     [0, 37.07, 0, -11, 0, -11],
+        #     [4.4, 0, 45.265, 0, 11, 0],
+        #     [0, -11, 0, 60.2815, 0, 0],
+        #     [11, 0, 11, 0, 137.5, 0],
+        #     [0, -11, 0, 0, 0, 110]
+        # ])
+
         M11 = Irb[0:3, 0:3]
         M12 = Irb[0:3, 3:6]
         M21 = Irb[3:6, 0:3]
@@ -50,15 +69,18 @@ def eMPCConstraints(xid, p0, x0, param):
         G[3:6, 0:3] = skew(xi_w) @ M12
         G[3:6, 3:6] = skew(xi_w) @ M11
 
+        # Rigid Body Coriolis Matrix
         Crb = np.zeros((6, 6))
         Crb[0:3, 0:3] = skew(M21 @ xi_v) + skew(M22 @ xi_w)
         Crb[0:3, 3:6] = skew(M11 @ xi_v) + skew(M12 @ xi_w)
         Crb[3:6, 0:3] = skew(M11 @ xi_v) + skew(M12 @ xi_w)
 
+        # Additional Mass Matrix
         Iam = np.diag([5.2815, 82.5, 55, 2.4929, 14.52, 27.115])
         Mam11 = Iam[0:3, 0:3]
         Mam22 = Iam[3:6, 3:6]
 
+        # Additional Mass Coriolis Matrix
         Cam = np.zeros((6, 6))
         Cam[0:3, 0:3] = skew(Mam22 @ xi_w)
         Cam[0:3, 3:6] = skew(Mam11 @ xi_v)

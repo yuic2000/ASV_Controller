@@ -54,7 +54,7 @@ def otter_true(x, n, V_c, beta_c):
     mp = 0                          # payload mass (kg)
     rp = np.array([0, 0, 0])        # payload location (m) wrt CO
     # V_c = 0                       # current speed (m/s)
-    beta_c = 1                      # current direction (rad)
+    # beta_c = 1                    # current direction (rad)
 
     # main parameters
     g = 9.81                        # acceleration of gravity (m/s^2)
@@ -62,6 +62,7 @@ def otter_true(x, n, V_c, beta_c):
     L = 2.0                         # length (m)
     B = 1.08                        # beam (m)
     m = 55.0                        # mass (kg)
+    # m = 250.18                        # mass (kg), from vrx simulation, added by yui Feb 1 2025
     rg = np.array([0.2, 0, -0.2])   # CG for hull only (m)
     R44 = 0.4 * B                   # radii of gyrations (m)  
     R55 = 0.25 * L   
@@ -104,7 +105,7 @@ def otter_true(x, n, V_c, beta_c):
     n_max = np.sqrt((0.5 * 24.4 * g) / k_pos)           # maximum propeller rev. (rad/s)        
     n_min = -np.sqrt((0.5 * 13.6 * g) / k_neg)          # minimum propeller rev. (rad/s)
 
-    # MRB and CRB matrices (Fossen 2021
+    # MRB and CRB matrices (Fossen 2021)
     I3 = np.eye(3)
     O3 = np.zeros((3, 3))
 

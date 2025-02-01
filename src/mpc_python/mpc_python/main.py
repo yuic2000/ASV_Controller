@@ -12,13 +12,11 @@ import rclpy
 from mpc_python.mpc_node import MPCNode
 
 
-
 def main(args=None): 
     # Initialize parameters
     np.random.seed(2)
     Ns = 1
     param = Param()             # Initialize parameters in param.py
-
 
     x0_ref = param.x0_ref
     xid_ref = param.xid_ref
@@ -31,7 +29,7 @@ def main(args=None):
         xid_ref_rt = xid_ref.copy()
         
         if param.mode == 1:  # zigzag maneuver
-            xid_ref_rt[2] = 0.1 * np.cos(i/100)
+            xid_ref_rt[2] = 0.1 * np.cos(i/50)      # 100: 20 Hz, 50: 10 Hz
         
         Xi = np.zeros((4, 4))
         Xi[:3, :3] = skew(xid_ref_rt[:3])
@@ -54,7 +52,7 @@ def main(args=None):
     mpc_node = MPCNode()
     mpc_node.get_logger().info("Hi: I'm here")
 
-    # rclpy.spin(mpc_node)            # stuck here
+    # rclpy.spin(mpc_node)    
     
     for k in range(Ns):
         # Setting initial states
@@ -69,6 +67,11 @@ def main(args=None):
 
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, mpc_node)
         Logger_eMPC_list.append(Logger_eMPC)
+
+    mpc_node.left_thrust_command_pub(0.0)
+    mpc_node.right_thrust_command_pub(0.0)
+    mpc_node.destroy_node()
+    rclpy.shutdown()
 
 
     # Save Logger_eMPC_list to a file

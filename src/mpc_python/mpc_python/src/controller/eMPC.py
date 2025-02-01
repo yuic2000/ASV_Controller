@@ -11,7 +11,7 @@ def quat2rotm(quat):
     """ Convert quaternion to rotation matrix. """
     return R.from_quat(quat).as_matrix()
 
-def eMPC(x0, xd, xid, param, solver):
+def eMPC(x0, xd, xid, param, solver):      
     Xd = np.block([
         [quat2rotm(xd[:4]), xd[4:7].reshape(-1, 1)],
         [np.zeros((1, 3)), np.ones(1)]
@@ -23,11 +23,8 @@ def eMPC(x0, xd, xid, param, solver):
     ])
 
     X00 = np.linalg.inv(X00) @ Xd
+    # X0 = logm(X00)
     X0 = np.real(logm(X00))
-
-    # print(X00)
-    # print('\n')
-    # print(X0)
 
     p0 = np.concatenate([
         np.array([X0[2, 1], X0[0, 2], X0[1, 0]]),  # first 3 elements

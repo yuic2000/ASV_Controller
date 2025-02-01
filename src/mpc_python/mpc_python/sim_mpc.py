@@ -8,8 +8,8 @@ from mpc_python.src.otter_true import otter_true
 from mpc_python.src.param import *
 
 def sim_mpc(q0, p0, w0, v0, param, mpc_node):
-    X_ref = param.X_ref
-    xi_ref = param.xi_ref
+    X_ref = param.X_ref     # [q_ref, p_ref]
+    xi_ref = param.xi_ref   # [w_ref, v_ref]
     Nsim = param.Nsim
     Nt = param.Nt
     dt = param.dt
