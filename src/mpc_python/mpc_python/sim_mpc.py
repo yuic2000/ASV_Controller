@@ -7,9 +7,9 @@ from mpc_python.src.controller.eMPC import eMPC
 from mpc_python.src.otter_true import otter_true
 from mpc_python.src.param import *
 
-def sim_mpc(q0, p0, w0, v0, param, mpc_node):
-    X_ref = param.X_ref     # [q_ref, p_ref]
-    xi_ref = param.xi_ref   # [w_ref, v_ref]
+def sim_mpc(q0, p0, w0, v0, param, cmd_pub):
+    X_ref = param.X_ref     # np.array[q_ref, p_ref]
+    xi_ref = param.xi_ref   # np.array[w_ref, v_ref]
     Nsim = param.Nsim
     Nt = param.Nt
     dt = param.dt
@@ -33,8 +33,8 @@ def sim_mpc(q0, p0, w0, v0, param, mpc_node):
         
         u, solver = eMPC(x0, X_ref_rt, xi_ref_rt, param, solver)        # u[0]: left, u[1]: right
 
-        mpc_node.left_thrust_command_pub(u[0])
-        mpc_node.right_thrust_command_pub(u[1])
+        cmd_pub.left_thrust_command_pub(u[0])
+        cmd_pub.right_thrust_command_pub(u[1])
 
         logger.taken_time += (time.time() - start_time)
 
