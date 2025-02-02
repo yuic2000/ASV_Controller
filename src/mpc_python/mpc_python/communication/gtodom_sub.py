@@ -23,7 +23,6 @@ class GtOdomSubscriberNode(Node):
         ])
 
         self.gtodom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 1000)
-        self.body_coord = None
         self.x_body = None
         self.x_odom = None
 

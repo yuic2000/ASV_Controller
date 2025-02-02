@@ -66,6 +66,8 @@ def main(args=None):
 
     # rclpy.spin(cmd_pub)
 
+    rclpy.spin_once(gtOdom_sub, timeout_sec=0.1)
+    rclpy.spin_once(cmd_pub, timeout_sec=0.1)
 
     for k in range(Ns):
         # Setting initial states
@@ -76,28 +78,29 @@ def main(args=None):
         w0 = (np.random.rand(3) - 0.5) * 0
         v0 = (np.random.rand(3) - 0.5) * 0
         v0[0] = 0.5
-
-
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)
 
 
     cmd_pub.left_thrust_command_pub(0.0)
     cmd_pub.right_thrust_command_pub(0.0)
-    # cmd_pub.destroy_node()
-    rclpy.shutdown()
 
 
     # Save Logger_eMPC_list to a file
     if param.mode == 1:       # mode 1: zigzag, 
         with open('zigzag_data.pkl', 'wb') as f:
             pickle.dump(Logger_eMPC_list, f)
-
     else:               # mode 2: circling
         with open('circling_data.pkl', 'wb') as f:
             pickle.dump(Logger_eMPC_list, f)
 
     plot_mpc(Logger_eMPC_list, param.X_ref, param.dt)
+
+    # Destroy nodes and shutdown
+    gtOdom_sub.destroy_node()
+    cmd_pub.destroy_node()
+    rclpy.shutdown()
+
 
 
 if __name__ == '__main__':

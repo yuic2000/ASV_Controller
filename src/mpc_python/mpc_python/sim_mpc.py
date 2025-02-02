@@ -40,8 +40,8 @@ def sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub):
         logger.taken_time += (time.time() - start_time)
 
         # Use Ground Truth Odometry
-        x_body_fmOdom = gtOdom_sub.get_x_body()
-        print(f"x_body_fmOdom: {x_body_fmOdom}")
+        x_body = gtOdom_sub.get_x_body()
+        print(f"x_gtOdom: {x_body}")
 
         # Update x_otter four times for simulation frequency, 4 * dt
         x_otter = np.concatenate((x0[10:13], x0[7:10], x0[4:7], R.from_quat(x0[0:4]).as_euler('xyz')))
