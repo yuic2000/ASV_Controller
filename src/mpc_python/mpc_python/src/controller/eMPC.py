@@ -6,10 +6,7 @@ from scipy import sparse
 
 from mpc_python.src.utils.eMPCConstraints import eMPCConstraints
 from mpc_python.src.utils.eMPCCost import eMPCCost
-
-def quat2rotm(quat):
-    """ Convert quaternion to rotation matrix. """
-    return R.from_quat(quat).as_matrix()
+from mpc_python.src.utils.LieGroup import quat2rotm
 
 def eMPC(x0, xd, xid, param, solver):      
     Xd = np.block([

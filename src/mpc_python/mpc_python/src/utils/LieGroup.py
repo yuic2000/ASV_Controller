@@ -1,4 +1,18 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
+
+
+def quat2rotm(quat):
+    """ Convert quaternion to rotation matrix. """
+    return R.from_quat(quat).as_matrix()
+
+####################################################################
+
+def rotm2quat(Rot):
+    """ Convert rotation matrix to quaternion. """
+    return R.from_matrix(Rot).as_quat()
+
+####################################################################
 
 def skew(w):
 
