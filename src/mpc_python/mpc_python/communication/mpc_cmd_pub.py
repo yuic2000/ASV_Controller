@@ -3,9 +3,9 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
 
-class MPCNode(Node):
+class MPCCmdPulishNode(Node):
     def __init__(self):
-        super().__init__('mpc_node')
+        super().__init__('mpc_thrust_cmd_publisher')
         self.get_logger().info("mpc_node is running")
 
         self.cmd_thrust_pub_l_ = self.create_publisher(Float64, '/wamv/thrusters/left/thrust', 10)
@@ -27,7 +27,7 @@ class MPCNode(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    mpc_node = MPCNode()
+    mpc_node = MPCCmdPulishNode()
 
     rclpy.spin(mpc_node)
 

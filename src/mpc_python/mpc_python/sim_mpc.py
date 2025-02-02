@@ -7,7 +7,8 @@ from mpc_python.src.controller.eMPC import eMPC
 from mpc_python.src.otter_true import otter_true
 from mpc_python.src.param import *
 
-def sim_mpc(q0, p0, w0, v0, param, cmd_pub):
+
+def sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub):
     X_ref = param.X_ref     # np.array[q_ref, p_ref]
     xi_ref = param.xi_ref   # np.array[w_ref, v_ref]
     Nsim = param.Nsim
@@ -37,6 +38,10 @@ def sim_mpc(q0, p0, w0, v0, param, cmd_pub):
         cmd_pub.right_thrust_command_pub(u[1])
 
         logger.taken_time += (time.time() - start_time)
+
+        # Use Ground Truth Odometry
+        x_body_fmOdom = gtOdom_sub.get_x_body()
+        print(f"x_body_fmOdom: {x_body_fmOdom}")
 
         # Update x_otter four times for simulation frequency, 4 * dt
         x_otter = np.concatenate((x0[10:13], x0[7:10], x0[4:7], R.from_quat(x0[0:4]).as_euler('xyz')))

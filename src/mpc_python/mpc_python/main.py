@@ -9,7 +9,8 @@ from mpc_python.src.param import *
 from mpc_python.src.plot import plot_mpc
 
 import rclpy
-from mpc_python.mpc_node import MPCNode
+from mpc_python.communication.mpc_cmd_pub import *
+from mpc_python.communication.gtodom_sub import *
 
 
 def main(args=None): 
@@ -49,11 +50,23 @@ def main(args=None):
 
     # Initialize MPC node, to be tested
     rclpy.init(args=args)
-    mpc_node = MPCNode()
-    mpc_node.get_logger().info("Hi: I'm here")
 
-    # rclpy.spin(mpc_node)    
-    
+    # Subscribe to ground truth odometry
+    gtOdom_sub = GtOdomSubscriberNode()
+    gtOdom_sub.get_logger().info("Hi: gtodom_sub is running")
+
+    # Publish thrust commands
+    cmd_pub = MPCCmdPulishNode()
+    cmd_pub.get_logger().info("Hi: cmd_pub is running")
+
+    # Create a multi-threaded executor
+    executor = rclpy.executors.MultiThreadedExecutor()
+    executor.add_node(gtOdom_sub)
+    executor.add_node(cmd_pub)
+
+    # rclpy.spin(cmd_pub)
+
+
     for k in range(Ns):
         # Setting initial states
         q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
@@ -65,12 +78,13 @@ def main(args=None):
         v0[0] = 0.5
 
 
-        Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, mpc_node)
+        Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)
 
-    mpc_node.left_thrust_command_pub(0.0)
-    mpc_node.right_thrust_command_pub(0.0)
-    mpc_node.destroy_node()
+
+    cmd_pub.left_thrust_command_pub(0.0)
+    cmd_pub.right_thrust_command_pub(0.0)
+    # cmd_pub.destroy_node()
     rclpy.shutdown()
 
 

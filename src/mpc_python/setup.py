@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'mpc_node = mpc_python.mpc_node:main',
+            'mpc_cmd_pub = mpc_python.communication.mpc_cmd_pub:main',
+            'gtodom_sub = mpc_python.communication.gtodom_sub:main',
             'main = mpc_python.main:main',
         ],
     },
