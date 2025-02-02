@@ -64,10 +64,8 @@ def main(args=None):
     executor.add_node(gtOdom_sub)
     executor.add_node(cmd_pub)
 
-    # rclpy.spin(cmd_pub)
-
-    rclpy.spin_once(gtOdom_sub, timeout_sec=0.1)
-    rclpy.spin_once(cmd_pub, timeout_sec=0.1)
+    rclpy.spin_once(gtOdom_sub, timeout_sec=0.001)
+    # rclpy.spin_once(cmd_pub, timeout_sec=0.1)
 
     for k in range(Ns):
         # Setting initial states

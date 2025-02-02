@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import rclpy
 from scipy.spatial.transform import Rotation as R
 from scipy.linalg import logm
 
@@ -40,6 +41,7 @@ def sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub):
         logger.taken_time += (time.time() - start_time)
 
         # Use Ground Truth Odometry
+        rclpy.spin_once(gtOdom_sub, timeout_sec=0.001)
         x_body = gtOdom_sub.get_x_body()
         print(f"x_gtOdom: {x_body}")
 
