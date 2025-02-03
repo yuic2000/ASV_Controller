@@ -64,18 +64,25 @@ def main(args=None):
     executor.add_node(gtOdom_sub)
     executor.add_node(cmd_pub)
 
-    rclpy.spin_once(gtOdom_sub, timeout_sec=0.001)
+    rclpy.spin_once(gtOdom_sub)
+    x_wrld = gtOdom_sub.get_x_wrld()
     # rclpy.spin_once(cmd_pub, timeout_sec=0.1)
 
     for k in range(Ns):
         # Setting initial states
-        q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
-        p0 = np.zeros(3)
-        p0[:2] += (np.random.rand(2)-1)*5
-        p0[1] += 2.5
+        # q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
+        # p0 = np.zeros(3)
+        # p0[:2] += (np.random.rand(2)-1)*5
+        # p0[1] += 2.5
         w0 = (np.random.rand(3) - 0.5) * 0
         v0 = (np.random.rand(3) - 0.5) * 0
         v0[0] = 0.5
+
+        q0 = x_wrld[0:4]
+        p0 = x_wrld[4:7]
+        # w0 = x_wrld[7:10]
+        # v0 = x_wrld[10:13]
+
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)
 

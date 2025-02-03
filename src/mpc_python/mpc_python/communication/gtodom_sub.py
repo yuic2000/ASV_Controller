@@ -14,26 +14,26 @@ class GtOdomSubscriberNode(Node):
         self.odom_topic = "/wamv/sensors/position/ground_truth_odometry"
         self.get_logger().info(f"Subscribe to odometry topic: {self.odom_topic}")
         
-        self.translation_odom_src_to_body = np.array([-532.64, 161.91, -0.07])  # for output.bag
-        self.rotation_odom_src_to_body = np.array([1, 0, 0, 0])
+        self.translation_odom_src_to_wrld = np.array([-532.64, 161.91, -0.07])  # for output.bag
+        self.rotation_odom_src_to_wrld = np.array([1, 0, 0, 0])
 
-        self.odom_src2body = np.block([
-            [quat2rotm(self.rotation_odom_src_to_body), self.translation_odom_src_to_body.reshape(-1, 1)],
+        self.odom_pos_src2wrld = np.block([
+            [quat2rotm(self.rotation_odom_src_to_wrld), self.translation_odom_src_to_wrld.reshape(-1, 1)],
             [np.zeros((1, 3)), np.ones(1)]
         ])
 
         self.gtodom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 1000)
-        self.x_body = None
+        self.x_wrld = None
         self.x_odom = None
 
     def odom_callback(self, msg):
-        # position (world frame)
+        # position (map frame)
         p_x = msg.pose.pose.position.x
         p_y = msg.pose.pose.position.y
         p_z = msg.pose.pose.position.z
         self.p_odom = np.array([p_x, p_y, p_z])
 
-        # orientation (world frame)
+        # orientation (map frame)
         q_x = msg.pose.pose.orientation.x
         q_y = msg.pose.pose.orientation.y
         q_z = msg.pose.pose.orientation.z
@@ -58,22 +58,22 @@ class GtOdomSubscriberNode(Node):
         # self.get_logger().info(f"Linear Vel: {self.v_odom}")
         # self.get_logger().info(f"Angular Vel: {self.w_odom}")
 
-        # world frame
+        # map frame
         self.odomsrc_coord = np.block([
             [quat2rotm(self.q_odom), self.p_odom.reshape(-1, 1)],
             [np.zeros((1, 3)), np.ones(1)]
         ])
 
-        self.body_coord = np.linalg.inv(self.odom_src2body) @ self.odomsrc_coord
+        self.wrld_coord = np.linalg.inv(self.odom_pos_src2wrld) @ self.odomsrc_coord
 
-        self.q_body = np.array(rotm2quat(self.body_coord[:3, :3]))
-        self.p_body = self.body_coord[:3, 3].flatten()
+        self.q_wrld = np.array(rotm2quat(self.wrld_coord[:3, :3]))
+        self.p_wrld = self.wrld_coord[:3, 3].flatten()
 
-        self.x_body = np.concatenate([self.q_body, self.p_body, self.w_body, self.v_body], axis=None)
+        self.x_wrld = np.concatenate([self.q_wrld, self.p_wrld, self.w_body, self.v_body], axis=None)
         self.x_odom = np.concatenate([self.q_odom, self.p_odom, self.w_body, self.v_body], axis=None)
 
-    def get_x_body(self):
-        return self.x_body
+    def get_x_wrld(self):
+        return self.x_wrld
 
     def get_x_odom(self):
         return self.x_odom
@@ -84,8 +84,8 @@ def main(args=None):
     Odom_sub = GtOdomSubscriberNode()
 
     def timer_callback():
-        if Odom_sub.body_coord is not None:
-            print("x_body:", Odom_sub.get_x_body())
+        if Odom_sub.wrld_coord is not None:
+            print("x_wrld:", Odom_sub.get_x_wrld())
             print("x_odom:", Odom_sub.get_x_odom())
 
     timer_period = 1.0  # seconds
