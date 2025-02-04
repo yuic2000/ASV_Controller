@@ -24,10 +24,10 @@ def eMPC(x0, xd, xid, param, solver):
     X0 = np.real(logm(X00))
 
     p0 = np.concatenate([
-        np.array([X0[2, 1], X0[0, 2], X0[1, 0]]),  # first 3 elements
+        np.array([X0[2, 1], X0[0, 2], X0[1, 0]]),   # first 3 elements
         X0[:3, 3].flatten(),                        # next 3 elements from the last column
-        x0[7:]                                      # 6 elements
-    ])
+        x0[7:]],                                    # 6 elements
+        axis=None)
 
     A, bmin, bmax = eMPCConstraints(xid, p0, x0, param)
     M, q, solver = eMPCCost(xid, param, solver)

@@ -1,10 +1,7 @@
 import numpy as np
-from scipy.spatial.transform import Rotation
-from scipy.linalg import expm
 import pickle
 
 from mpc_python.sim_mpc import sim_mpc
-from mpc_python.src.utils.LieGroup import skew
 from mpc_python.src.param import *
 from mpc_python.src.plot import plot_mpc
 
@@ -19,30 +16,8 @@ def main(args=None):
     Ns = 1
     param = Param()             # Initialize parameters in param.py
 
-    x0_ref = param.x0_ref
-    xid_ref = param.xid_ref
-    X_ref = param.X_ref
-    xi_ref = param.xi_ref
+    param.get_ref_trajectory()  # Get reference trajectory
 
-    X = np.eye(4)
-
-    for i in range(param.Nsim):
-        xid_ref_rt = xid_ref.copy()
-        
-        if param.mode == 1:  # zigzag maneuver
-            xid_ref_rt[2] = 0.1 * np.cos(i/50)      # 100: 20 Hz, 50: 10 Hz
-        
-        Xi = np.zeros((4, 4))
-        Xi[:3, :3] = skew(xid_ref_rt[:3])
-        Xi[:3, 3] = xid_ref_rt[3:]
-        
-        X = X @ expm(Xi * param.dt)
-        new_quat = Rotation.from_matrix(X[:3, :3]).as_quat()
-        X_ref = np.vstack([X_ref, np.concatenate([new_quat, X[:3, 3]])])
-        xi_ref = np.vstack([xi_ref, xid_ref_rt])
-
-    param.X_ref = X_ref
-    param.xi_ref = xi_ref
 
     # Run simulation
     Logger_eMPC_list = []
@@ -64,24 +39,23 @@ def main(args=None):
     executor.add_node(gtOdom_sub)
     executor.add_node(cmd_pub)
 
-    rclpy.spin_once(gtOdom_sub)
-    x_wrld = gtOdom_sub.get_x_wrld()
-    # rclpy.spin_once(cmd_pub, timeout_sec=0.1)
-
     for k in range(Ns):
         # Setting initial states
         # q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
         # p0 = np.zeros(3)
         # p0[:2] += (np.random.rand(2)-1)*5
         # p0[1] += 2.5
-        w0 = (np.random.rand(3) - 0.5) * 0
-        v0 = (np.random.rand(3) - 0.5) * 0
-        v0[0] = 0.5
+        # w0 = (np.random.rand(3) - 0.5) * 0
+        # v0 = (np.random.rand(3) - 0.5) * 0
+        # v0[0] = 0.5
+        
+        rclpy.spin_once(gtOdom_sub)
+        x_wrld = gtOdom_sub.get_x_wrld()
 
         q0 = x_wrld[0:4]
         p0 = x_wrld[4:7]
-        # w0 = x_wrld[7:10]
-        # v0 = x_wrld[10:13]
+        w0 = x_wrld[7:10]
+        v0 = x_wrld[10:13]
 
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)

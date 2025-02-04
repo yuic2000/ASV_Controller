@@ -38,13 +38,13 @@ def eMPCConstraints(xid, p0, x0, param):
         #     [-11.0, 0, -11.0, 0, 22.55, 0],
         #     [0, 11.0, 0, 4.4, 0, 18.15]
         # ])
-        Irb = np.array([                     # from vrx simulation, added by yui Feb 1 2025
-            [250.18,   0,       0,      0,      -11.0,         0],
-            [0,     250.18,     0,     11.0,      0,        11.0],
-            [0,        0,     250.18,   0,      -11.0,         0],
-            [0,       11.0,     0,   225.1712,  0.12162, 0.99187],
-            [-11.0,    0,     -11.0,  0.12162,  454.141, 0.29216],
-            [0,       11.0,     0,    0.99187,  0.29216,499.7524]
+        Irb = np.array([                     # from vrx simulation, added by yui Feb 1 2025, take 0.2m zg and xg
+            [250.18,   0,       0,      0,      -50.0,         0],
+            [0,     250.18,     0,     50.0,      0,        50.0],
+            [0,        0,     250.18,   0,      -50.0,         0],
+            [0,       50.0,     0,   225.1712,  0.12162, 0.99187],
+            [-50.0,    0,     -50.0,  0.12162,  454.141, 0.29216],
+            [0,       50.0,     0,    0.99187,  0.29216,499.7524]
         ])
         # Irb = np.array([                  # from Lie MPC, added by yui Feb 1 2025
         #     [17.1572, 0, 4.4, 0, 11, 0],
@@ -138,8 +138,7 @@ def eMPCConstraints(xid, p0, x0, param):
         A[Noff + (k * Nu):Noff + (k + 1) * Nu, Noff + (k * Nu):Noff + (k + 1) * Nu] = np.eye(Nu)
 
 
-    bmin[Nt * Nx:(Nt + 1) * Nx] = p0.flatten()
-    # bmin[Nt * Nx:(Nt + 1) * Nx] = p0
+    bmin[Nt * Nx:(Nt + 1) * Nx] = p0
 
     bmax = np.copy(bmin)
     bmax[(Nt + 1) * Nx:] = np.tile(param.umax, Nt)

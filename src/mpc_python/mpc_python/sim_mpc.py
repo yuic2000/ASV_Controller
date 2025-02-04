@@ -36,33 +36,28 @@ def sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub):
         u, solver = eMPC(x0, X_ref_rt, xi_ref_rt, param, solver)        # u[0]: left, u[1]: right
 
         # print(f"u: {u}")
-        cmd_pub.left_thrust_command_pub(float(u[0]))
-        cmd_pub.right_thrust_command_pub(float(u[1]))
+        cmd_pub.left_thrust_command_pub(float(u[1]))
+        cmd_pub.right_thrust_command_pub(float(u[0]))
 
         logger.taken_time += (time.time() - start_time)
 
         # Use Ground Truth Odometry
-        rclpy.spin_once(gtOdom_sub)
+        test_timer = time.time()
+        rclpy.spin_once(gtOdom_sub, timeout_sec=0.001)
         x_wrld = gtOdom_sub.get_x_wrld()
-        print(f"x_gtOdom: {x_wrld}")
+        # print(f"x_gtOdom: {x_wrld}")
+        print(f"test_timer: {time.time() - test_timer}")
 
-        # x0[0:4] = x_wrld[0:4]
-        # x0[4:7] = x_wrld[4:7]
 
         # Update x_otter four times for simulation frequency, 4 * dt
-        x_otter = np.concatenate((x0[10:13], x0[7:10], x0[4:7], R.from_quat(x0[0:4]).as_euler('xyz')))
-        # x_boat = x_wrld
-        for j in range(5):  # 4 -> 5
-            x_otter += otter_true(x_otter, u, param.V_c, param.beta_c) * dt / 5
+        # x_otter = np.concatenate((x0[10:13], x0[7:10], x0[4:7], R.from_quat(x0[0:4]).as_euler('xyz')))
+        # for j in range(5):  # 4 -> 5
+        #     x_otter += otter_true(x_otter, u, param.V_c, param.beta_c) * dt / 5
             
-            # rclpy.spin_once(gtOdom_sub)
-            # x_wrld = gtOdom_sub.get_x_wrld()
-            # x_boat += x_wrld / 5
 
-        x0 = np.concatenate((R.from_euler('xyz', x_otter[9:12]).as_quat(), x_otter[6:9], x_otter[3:6], x_otter[0:3]))
-        # x0 = x_boat
-        # x0[0:4] = x_wrld[0:4]
-        # x0[4:7] = x_wrld[4:7]
+        # x0 = np.concatenate((R.from_euler('xyz', x_otter[9:12]).as_quat(), x_otter[6:9], x_otter[3:6], x_otter[0:3]))
+        x0 = x_wrld
+
         # print(f"x_otter: {x0}")
 
         Xd = np.eye(4)
