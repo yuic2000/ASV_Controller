@@ -4,7 +4,7 @@ import numpy as np
 def plot_mpc(Logger_list, X_ref, dt):
     axis_font_size = 12
     x_lim = [0, 60]
-    
+
     # Error plots
     fig1, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
