@@ -1,0 +1,17 @@
+build/
+lib/
+
+# VS Code
+.vscode
+
+# MAC OS
+.DS_Store
+
+# logs
+log/
+log/*.txt
+log/*/*.txt
+
+
+# python 
+__pycache__/
