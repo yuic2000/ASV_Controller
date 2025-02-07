@@ -14,8 +14,10 @@ class GtOdomSubscriberNode(Node):
         self.odom_topic = "/wamv/sensors/position/ground_truth_odometry"
         self.get_logger().info(f"Subscribe to odometry topic: {self.odom_topic}")
         
-        self.translation_odom_src_to_wrld = np.array([-532.64, 161.91, -0.07])  # for output.bag
-        self.rotation_odom_src_to_wrld = np.array([1, 0, 0, 0])
+        self.translation_odom_src_to_wrld = np.array([-532.64, 162.5, -0.07])  # for output.bag
+        self.rotation_odom_src_to_wrld = np.array([0, 0, 0, 1])     # x: 0, y: 0, z: 0
+        # self.rotation_odom_src_to_wrld = np.array([0, 0, 1/(2**0.5), 1/(2**0.5)])     # x: 0, y: 0, z: pi/2
+        # self.rotation_odom_src_to_wrld = np.array([1, 0, 0, 0])   # x: pi, y: 0, z: 0
 
         self.odom_pos_src2wrld = np.block([
             [quat2rotm(self.rotation_odom_src_to_wrld), self.translation_odom_src_to_wrld.reshape(-1, 1)],
@@ -52,12 +54,6 @@ class GtOdomSubscriberNode(Node):
         w_z = msg.twist.twist.angular.z
         self.w_body = np.array([w_x, w_y, w_z])
 
-        # self.get_logger().info(f"Seq: [{msg.header.stamp.sec}]")
-        # self.get_logger().info(f"Position: {self.p_odom}")
-        # self.get_logger().info(f"Orientation: {self.p_odomq}")
-        # self.get_logger().info(f"Linear Vel: {self.v_odom}")
-        # self.get_logger().info(f"Angular Vel: {self.w_odom}")
-
         # map frame
         self.odomsrc_coord = np.block([
             [quat2rotm(self.q_odom), self.p_odom.reshape(-1, 1)],
@@ -70,13 +66,13 @@ class GtOdomSubscriberNode(Node):
         self.p_wrld = self.wrld_coord[:3, 3].flatten()
 
         self.x_wrld = np.concatenate([self.q_wrld, self.p_wrld, self.w_body, self.v_body], axis=None)
-        self.x_odom = np.concatenate([self.q_odom, self.p_odom, self.w_body, self.v_body], axis=None)
+        # self.x_odom = np.concatenate([self.q_odom, self.p_odom, self.w_body, self.v_body], axis=None)
 
     def get_x_wrld(self):
         return self.x_wrld
 
-    def get_x_odom(self):
-        return self.x_odom
+    # def get_x_odom(self):
+    #     return self.x_odom
 
 
 def main(args=None):
