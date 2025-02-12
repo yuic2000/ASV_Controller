@@ -16,13 +16,13 @@ class MPCCmdPulishNode(Node):
         msg = Float64()
         msg.data = thrust
         self.cmd_thrust_pub_l_.publish(msg)
-        self.get_logger().info("Publishing left propeller thrust: '%f'" % msg.data)
+        # self.get_logger().info("Publishing left propeller thrust: '%f'" % msg.data)
 
     def right_thrust_command_pub(self, thrust):
         msg = Float64()
         msg.data = thrust
         self.cmd_thrust_pub_r_.publish(msg)
-        self.get_logger().info("Publishing right propeller thrust: '%f'" % msg.data)
+        # self.get_logger().info("Publishing right propeller thrust: '%f'" % msg.data)
 
 def main(args=None):
     rclpy.init(args=args)
@@ -31,8 +31,7 @@ def main(args=None):
 
     rclpy.spin(mpc_node)
 
-    # mpc_node.destroy_node()
-    
+    mpc_node.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
