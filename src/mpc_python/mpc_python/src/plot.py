@@ -69,6 +69,21 @@ def plot_mpc(Logger_list, X_ref, dt):
     ax.set_xlabel('x')
     ax.set_ylabel('y')
 
+    # Plot control inputs
+    fig3 = plt.figure(figsize=(10, 8))
+    ax = fig3.add_subplot(111)
+    logger = Logger_list[-1]
+
+    t = np.arange(0, logger.U.shape[1] * dt, dt)
+
+    ax.plot(t, logger.U[0, :1200], 'r-', linewidth=2, label='Right thrust')
+    ax.plot(t, logger.U[1, :1200], 'b-', linewidth=2, label='Left thrust')
+
+    ax.set_title("Propeller thrusts", fontsize=axis_font_size)
+    ax.grid(True)
+    ax.set_ylabel("Thrust (N)")
+    ax.set_xlabel("Time (s)")
+
     for idx, logger in enumerate(Logger_list):
         print(f'{idx+1} simulation: {logger.taken_time} sec')
     
