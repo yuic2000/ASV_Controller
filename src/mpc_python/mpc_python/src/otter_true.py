@@ -61,7 +61,8 @@ def otter_true(x, n, V_c, beta_c):
     rho = 1025                      # density of water (kg/m^3)
     L = 2.0                         # length (m)
     B = 1.08                        # beam (m)
-    m = 55.0                        # mass (kg)
+    # m = 55.0                      # mass (kg)
+    m = 17.65                        # mass (kg), from Blueboat CAD model, added by yui Feb 17 2025
     # m = 250.18                        # mass (kg), from vrx simulation, added by yui Feb 1 2025
     rg = np.array([0.2, 0, -0.2])   # CG for hull only (m)
     R44 = 0.4 * B                   # radii of gyrations (m)  
