@@ -28,11 +28,11 @@ def main(args=None):
 
     # Subscribe to ground truth odometry
     gtOdom_sub = GtOdomSubscriberNode()
-    gtOdom_sub.get_logger().info("Hi: gtodom_sub is running")
+    gtOdom_sub.get_logger().info("Ground-truth Odometry subscriber is running")
 
     # Publish thrust commands
     cmd_pub = MPCCmdPulishNode()
-    cmd_pub.get_logger().info("Hi: cmd_pub is running")
+    cmd_pub.get_logger().info("Command publiser node is running")
 
     # Create a multi-threaded executor
     executor = rclpy.executors.MultiThreadedExecutor()
@@ -40,29 +40,36 @@ def main(args=None):
     executor.add_node(cmd_pub)
 
     for k in range(Ns):
-        # Setting initial states
-        # q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
-        # p0 = np.zeros(3)
-        # p0[:2] += (np.random.rand(2)-1)*5
-        # p0[1] += 2.5
-        # w0 = (np.random.rand(3) - 0.5) * 0
-        # v0 = (np.random.rand(3) - 0.5) * 0
-        # v0[0] = 0.5
+        # Setting initial states, for using otter true model
+        q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
+        p0 = np.zeros(3)
+        p0[:2] += (np.random.rand(2)-1)*5
+        p0[1] += 2.5
+        w0 = (np.random.rand(3) - 0.5) * 0
+        v0 = (np.random.rand(3) - 0.5) * 0
+        v0[0] = 0.5
         
-        rclpy.spin_once(gtOdom_sub)
-        x_wrld = gtOdom_sub.get_x_wrld()
+        # Read initial states, for using ground truth odometry
+        # rclpy.spin_once(gtOdom_sub)
+        # x_wrld = gtOdom_sub.get_x_wrld()
 
-        q0 = x_wrld[0:4]
-        p0 = x_wrld[4:7]
-        w0 = x_wrld[7:10]
-        v0 = x_wrld[10:13]
+        # q0 = x_wrld[0:4]
+        # p0 = x_wrld[4:7]
+        # w0 = x_wrld[7:10]
+        # v0 = x_wrld[10:13]
 
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)
 
 
-    cmd_pub.left_thrust_command_pub(0.0)
-    cmd_pub.right_thrust_command_pub(0.0)
+    cmd_pub.vrx_thrust_left_pub(0.0)
+    cmd_pub.vrx_thrust_right_pub(0.0)
+    cmd_pub.mavlink_thrust_pub([0.0, 0.0])
+    
+    # Destroy nodes and shutdown
+    gtOdom_sub.destroy_node()
+    cmd_pub.destroy_node()
+    rclpy.shutdown()
 
 
     # Save Logger_eMPC_list to a file
@@ -74,12 +81,6 @@ def main(args=None):
             pickle.dump(Logger_eMPC_list, f)
 
     plot_mpc(Logger_eMPC_list, param.X_ref, param.dt)
-
-    # Destroy nodes and shutdown
-    gtOdom_sub.destroy_node()
-    cmd_pub.destroy_node()
-    rclpy.shutdown()
-
 
 
 if __name__ == '__main__':
