@@ -22,25 +22,35 @@ class Param:
         # control constraints
         self.umax = np.ones(self.Nu) * 115
         self.umin = -np.ones(self.Nu) * 65
-        # self.umax = np.ones(self.Nu) * 150
-        # self.umin = -np.ones(self.Nu) * 100
+        # self.umax = np.ones(self.Nu) * 50
+        # self.umin = -np.ones(self.Nu) * 50
 
         # Mass matrix, from Lie Group MPC paper, original
-        self.I = np.array([
-            [17.1572,   0,     4.4,     0,     11,     0],
-            [0,       37.07,    0,     -11,     0,   -11],
-            [4.4,       0,    45.265,   0,     11,     0],
-            [0,        -11,     0,    60.2815,  0,     0],
-            [11,        0,     11,      0,     137.5,  0],
-            [0,        -11,     0,      0,      0,   110]
-        ])
         # self.I = np.array([
-        #     [60.2815,   0,      0,     0,     -11,       0],
-        #     [0,       137.5,    0,     11,     0,       11],
-        #     [0,         0,     110,    0,     -11,       0],
-        #     [0,        11,      0,   17.1572,  0,      4.4],
-        #     [-11,       0,     -11,    0,    37.07,      0],
-        #     [0,        11,      0,    4.4,      0,  45.265]
+        #     [17.1572,   0,     4.4,     0,     11,     0],
+        #     [0,       37.07,    0,     -11,     0,   -11],
+        #     [4.4,       0,    45.265,   0,     11,     0],
+        #     [0,        -11,     0,    60.2815,  0,     0],
+        #     [11,        0,     11,      0,     137.5,  0],
+        #     [0,        -11,     0,      0,      0,   110]
+        # ])
+        # Mass matrix, from Blueboat CAD model
+        self.I = np.array([
+            [2.2759,   -0.6860,  -0.1751,   0,      3.53,     0],
+            [-0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53],
+            [-0.1751,  -0.0234,  10.5172,   0,      3.53,     0],
+            [0,         -3.53,      0,    18.4444,   0,       0],
+            [3.53,        0,      3.53,     0,     44.125,    0],
+            [0,         -3.53,      0,      0,       0,    35.3]
+        ])
+        # Rigid Body matrix from blueboat CAD model
+        # Irb = np.array([
+        #     [17.65,   0,     0,       0,    -3.53,        0],
+        #     [0,     17.65,   0,     3.53,     0,       3.53],
+        #     [0,       0,   17.65,     0,    -3.53,        0],
+        #     [0,      3.53,   0,    1.4759, -0.0686, -0.1751],
+        #     [-3.53,   0,   -3.53, -0.0686,  1.8913, -0.0234],
+        #     [0,      3.53,   0,   -0.1751, -0.0234,  1.8157]
         # ])
 
 
@@ -55,7 +65,9 @@ class Param:
         self.q0_ref = np.array([1, 0, 0, 0])            # desired quaternion
         self.p0_ref = np.array([0, 0, 0])               # desired position
         self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
-        self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
+        # self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
+        self.v0_ref = np.array([0.25, 0, 0])             # desired surge velocity 0.5 m/s
+
         self.x0_ref = np.concatenate([self.q0_ref, self.p0_ref])
         self.xid_ref = np.concatenate([self.w0_ref, self.v0_ref])
         # reference trajectory
@@ -90,6 +102,6 @@ class Logger:
     def __init__(self, Nsim):
         self.X = np.zeros((13, Nsim - 11))
         self.Err = np.zeros((6, Nsim - 12))
-        self.U = np.zeros((6, Nsim - 12))
+        self.U = np.zeros((2, Nsim - 12))
         self.Err2 = np.zeros((4, Nsim - 12))
         self.taken_time = 0
