@@ -103,8 +103,8 @@ def otter_true(x, n, V_c, beta_c):
     l2 = y_pont                                         # lever arm right propeller (m)        
     k_pos = 0.02216 / 2                                 # Positive Bollard, one propeller
     k_neg = 0.01289 / 2                                 # Negative Bollard, one propeller
-    n_max = np.sqrt((0.5 * 24.4 * g) / k_pos)           # maximum propeller rev. (rad/s)        
-    n_min = -np.sqrt((0.5 * 13.6 * g) / k_neg)          # minimum propeller rev. (rad/s)
+    n_max = np.sqrt((0.5 * 24.4 * g) / k_pos)           # maximum propeller rev. (rad/s), 103.93
+    n_min = -np.sqrt((0.5 * 13.6 * g) / k_neg)          # minimum propeller rev. (rad/s), -101.73
 
     # MRB and CRB matrices (Fossen 2021)
     I3 = np.eye(3)

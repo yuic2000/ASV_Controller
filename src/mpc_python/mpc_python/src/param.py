@@ -65,8 +65,8 @@ class Param:
         self.q0_ref = np.array([1, 0, 0, 0])            # desired quaternion
         self.p0_ref = np.array([0, 0, 0])               # desired position
         self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
-        # self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
-        self.v0_ref = np.array([0.25, 0, 0])             # desired surge velocity 0.5 m/s
+        self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
+        # self.v0_ref = np.array([0.25, 0, 0])             # desired surge velocity 0.5 m/s
 
         self.x0_ref = np.concatenate([self.q0_ref, self.p0_ref])
         self.xid_ref = np.concatenate([self.w0_ref, self.v0_ref])
