@@ -20,10 +20,12 @@ class Param:
         self.xmax = np.inf * np.ones(self.Nx)
         self.xmin = -self.xmax
         # control constraints
-        self.umax = np.ones(self.Nu) * 115
-        self.umin = -np.ones(self.Nu) * 65
-        # self.umax = np.ones(self.Nu) * 50
-        # self.umin = -np.ones(self.Nu) * 50
+        # self.umax = np.ones(self.Nu) * 115
+        # self.umin = -np.ones(self.Nu) * 65
+        self.umax = np.ones(self.Nu) * 35           # 3.5 kgF
+        self.umin = -np.ones(self.Nu) * 25          # -2.8 kgF
+        # self.umax = np.ones(self.Nu) * 10           # 1 kgF
+        # self.umin = -np.ones(self.Nu) * 10          # -1 kgF
 
         # Mass matrix, from Lie Group MPC paper, original
         # self.I = np.array([
@@ -93,7 +95,7 @@ class Param:
 
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
         
-        self.X_ref[:, 5] += 2   # offset in y direction
+        # self.X_ref[:, 5] += 2   # offset in y direction, use when using ground truth odometry
         
 
 

@@ -43,7 +43,7 @@ def main(args=None):
         # Setting initial states, for using otter true model
         q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
         p0 = np.zeros(3)
-        p0[:2] += (np.random.rand(2)-1)*5
+        p0[:2] += (np.random.rand(2)-1) * 2
         p0[1] += 2.5
         w0 = (np.random.rand(3) - 0.5) * 0
         v0 = (np.random.rand(3) - 0.5) * 0
