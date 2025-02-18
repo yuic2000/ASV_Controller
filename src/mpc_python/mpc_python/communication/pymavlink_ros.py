@@ -17,7 +17,7 @@ class IntegratedMavlinkController(Node):
         # Create a subscriber to listen for thrust commands
         self.subscription = self.create_subscription(
             Float64MultiArray,  # Use a message containing two float values
-            '/thrust_commands',
+            '/mavlink/thrust_commands',
             self.thrust_callback,
             10
         )
@@ -69,8 +69,8 @@ class IntegratedMavlinkController(Node):
             self.get_logger().error('Invalid command format, expected [left_thrust, right_thrust]')
             return
             
-        right_thrust = msg.data[0]
-        left_thrust = msg.data[1]
+        right_thrust = msg.data[0] / 9.81
+        left_thrust = msg.data[1] / 9.81
         
         # Convert thrust to PWM
         left_pwm = self._thrust_to_pwm(left_thrust)
@@ -124,6 +124,8 @@ class IntegratedMavlinkController(Node):
         # Channel 1: Steering, Channel 3: Throttle
         self.rc_channel_values[0] = steering
         self.rc_channel_values[2] = throttle
+        # self.rc_channel_values[0] = 1500
+        # self.rc_channel_values[2] = 1500
 
     def send_rc_commands(self):
         """Send RC override commands periodically."""
