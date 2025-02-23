@@ -5,32 +5,50 @@ using namespace std;
 
 // Param class constructor
 Param::Param() {
-    mode = 2;               // 1: zigzag, 2: circling
-    dt = 0.05;              // MPC simulation time step, model: 20Hz, Gt: 25 Hz
+    mode = 1;                       // 1: zigzag, 2: circling
+    dt = 0.05;                      // MPC simulation time step, (for blueboat 20~25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100; 
-    Nsim = (int)(ceil(65.0 / dt));
+    Nt = 100;                       // MPC planning time, 5 sec
+    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, 65 sec
     V_c = 0.5;
     beta_c = 1.0;
 
-    I = MatrixXd(6, 6); 
-    I << 17.1572, 0, 4.4, 0, 11, 0,
-         0, 37.07, 0, -11, 0, -11,
-         4.4, 0, 45.265, 0, 11, 0,
-         0, -11, 0, 60.2815, 0, 0,
-         11, 0, 11, 0, 137.5, 0,
-         0, -11, 0, 0, 0, 110;
+    I = MatrixXd(6, 6);
+    // // Inertia matrix, from otter simulation model
+    // I << 17.1572, 0, 4.4, 0, 11, 0,
+    //      0, 37.07, 0, -11, 0, -11,
+    //      4.4, 0, 45.265, 0, 11, 0,
+    //      0, -11, 0, 60.2815, 0, 0,
+    //      11, 0, 11, 0, 137.5, 0,
+    //      0, -11, 0, 0, 0, 110;
 
+    // Mass matrix, from Blueboat CAD model
+    I << 2.2759,   -0.6860,  -0.1751,   0,      3.53,     0,
+        -0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53,
+        -0.1751,  -0.0234,  10.5172,   0,      3.53,     0,
+         0,         -3.53,      0,    18.4444,   0,       0,
+         3.53,        0,      3.53,     0,     44.125,    0,
+         0,         -3.53,      0,      0,       0,    35.3;
+
+
+    // state and control limits
     xmax = VectorXd::Constant(Nx, numeric_limits<double>::infinity()); 
     xmin = -xmax; 
-    umax = VectorXd::Constant(Nu, 115); 
-    umin = -VectorXd::Constant(Nu, 65);
+
+    // for otter simulation model control limits
+    // umax = VectorXd::Constant(Nu, 115); 
+    // umin = -VectorXd::Constant(Nu, 65);
+
+    // for blueboat model control limits, converge when using 75N after changing propeller lever arms to 0.1143
+    umax = VectorXd::Constant(Nu, 75);      // should be 35 N 
+    umin = -VectorXd::Constant(Nu, 60);     // should be -25 N
+
+    //////////////////////////////////////////////////////////////////////////////////
 
     // cost matrices
     diag_values_cost = VectorXd(12);
     diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
-    // diag_values_cost << 1e-5, 1e-5, 5, 100, 100, 1e-5, 1e-5, 1e-5, 1e-5, 10, 1e-5, 1e-5;
     P = diag_values_cost.asDiagonal() * 10;
     Q = diag_values_cost.asDiagonal() * 1;
     R = MatrixXd::Identity(2, 2) * 1e-5;

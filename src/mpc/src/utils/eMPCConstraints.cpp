@@ -28,12 +28,21 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         D_t(2, 2) -= 45.265 * (10 * abs(xid(k, 2)));
 
         MatrixXd Irb(6, 6);
-        Irb << 55.0, 0, 0, 0, -11.0, 0,
-               0, 55.0, 0, 11.0, 0, 11.0,
-               0, 0, 55.0, 0, -11.0, 0,
-               0, 11.0, 0, 14.6643, 0, 4.4,
-               -11.0, 0, -11.0, 0, 22.55, 0,
-               0, 11.0, 0, 4.4, 0, 18.15;
+        // for otter simulation model
+        // Irb << 55.0, 0, 0, 0, -11.0, 0,
+        //        0, 55.0, 0, 11.0, 0, 11.0,
+        //        0, 0, 55.0, 0, -11.0, 0,
+        //        0, 11.0, 0, 14.6643, 0, 4.4,
+        //        -11.0, 0, -11.0, 0, 22.55, 0,
+        //        0, 11.0, 0, 4.4, 0, 18.15;
+
+        // for blueboat CAD model
+        Irb << 17.65,   0,     0,       0,    -3.53,        0,
+               0,     17.65,   0,     3.53,     0,       3.53,
+               0,       0,   17.65,     0,    -3.53,        0,
+               0,      3.53,   0,    1.4759, -0.0686, -0.1751,
+              -3.53,    0,   -3.53, -0.0686,  1.8913, -0.0234,
+               0,      3.53,   0,   -0.1751, -0.0234,  1.8157;
         
         MatrixXd M11 = Irb.block<3, 3>(0, 0);
         MatrixXd M12 = Irb.block<3, 3>(0, 3);
@@ -55,7 +64,9 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         Crb.block<3, 3>(3, 0) = skew(M11 * xi_v) + skew(M12 * xi_w);
 
         MatrixXd Iam = MatrixXd::Zero(6, 6);
-        Iam.diagonal() << 5.2815, 82.5, 55, 2.4929, 14.52, 27.115;
+        // Iam.diagonal() << 5.2815, 82.5, 55, 2.4929, 14.52, 27.115;       // from otter simulation model
+        Iam.diagonal() << 0.7944, 26.475, 17.65, 0.8, 4.6596, 8.7015;       // from blueboat CAD model, 17.65 kg
+
         MatrixXd Mam11 = Iam.block<3, 3>(0, 0);
         MatrixXd Mam22 = Iam.block<3, 3>(3, 3);
 
@@ -88,7 +99,8 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         Ac.block<6, 6>(6, 6) = H;
         
         MatrixXd Bc = MatrixXd::Zero(12, 2);
-        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.395, -0.395, 1, 1, 0, 0, 0, 0).finished();
+        // Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.395, -0.395, 1, 1, 0, 0, 0, 0).finished(); // for otter simulation model
+        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.1143, -0.1143, 1, 1, 0, 0, 0, 0).finished();  // for blueboat model
         
         VectorXd b = (G + G2) * x0.segment<6>(7);
         b(2) += 45.265 * (10 * abs(xid(k, 2))) * xid(k, 2);

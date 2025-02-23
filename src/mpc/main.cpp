@@ -23,7 +23,6 @@ int main(int argc, char **argv) {
     int mode = param.mode;              // 1: zigzag, 2: circling
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
-    double dt = param.dt;               // MPC simulation time step, 20 Hz
 
     param.set_reference_trajectory();
 
@@ -62,8 +61,8 @@ int main(int argc, char **argv) {
         // q0: randomly rotated -0.25*pi to 0.25*pi along z-axis
         Quaterniond q0(AngleAxisd(dis(gen), Vector3d::UnitZ()));    // x, y, z, w
         Vector3d p0 = Vector3d::Zero();
-        p0.head<2>() += (Vector2d::Random() - Vector2d::Ones()) * 5;
-        p0(1) += 2.5;
+        p0.head<2>() += (Vector2d::Random() - Vector2d::Ones()) * 2;
+        p0(1) += 1.5;
         Vector3d w0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;
         Vector3d v0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;;
         v0(0) = 0.5;
@@ -121,7 +120,7 @@ int main(int argc, char **argv) {
 
     std::cout << "Data saved!" << std::endl;
 
-    plot_mpc(Logger_eMPC_list, param.X_ref, dt);
+    plot_mpc(Logger_eMPC_list, param);
 
     std::cout << "Plot finished!" << std::endl;
 

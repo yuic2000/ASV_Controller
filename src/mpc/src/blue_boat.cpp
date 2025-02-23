@@ -52,7 +52,8 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
     const double rho = 1025.0;                  // density of water (kg/m^3)
     const double L = 2.0;                       // length (m)
     const double B = 1.08;                      // beam (m)
-    const double m = 55.0;                      // mass (kg)
+    // const double m = 55.0;                      // mass (kg), for otter simulation model
+    const double m = 17.65;                      // mass (kg), for blueboat CAD model
     Vector3d rg_vec(0.2, 0.0, -0.2);            // CG for hull only (m)
     double R44 = 0.4 * B;                       // radii of gyrations (m)
     double R55 = 0.25 * L;
@@ -62,7 +63,8 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
 
     // Data for one pontoon
     double B_pont = 0.25;                       // beam of one pontoon (m)
-    double y_pont = 0.395;                      // distance from centerline to waterarea center (m)
+    // double y_pont = 0.395;                      // distance from centerline to waterarea center (m), for otter simulation model
+    double y_pont = 0.1143;                     // distance from centerline to waterarea center (m), for blueboat model
     double Cw_pont = 0.75;                      // waveline area coefficient (-)
     double Cb_pont = 0.4;                       // block coefficient
 
