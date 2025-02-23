@@ -1,6 +1,3 @@
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64.hpp"
-#include "std_msgs/msg/float64_multi_array.hpp"
 #include "../../include/mpc/communication/mpc_cmd_pub.hpp"
 
 
