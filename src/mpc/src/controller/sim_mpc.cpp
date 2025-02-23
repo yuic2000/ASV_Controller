@@ -45,22 +45,6 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
         // std::cout << "Elapsed time: " << elapsed.count() << " seconds" << std::endl;
         logger.taken_time += elapsed.count();
 
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-        ////////////////////      Use Ground-truth Odometry to update next step       ////////////////////
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // auto listener_start = std::chrono::high_resolution_clock::now();
-        // rclcpp::spin_some(gtodom_sub);
-        // VectorXd x_wrld = gtodom_sub->get_x_wrld();
-        // // std::cout << "x_gtOdom: " << x_wrld.transpose() << std::endl;
-        // std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
-        // x0 = x_wrld;
-        // std::cout << "x0: " << x0.transpose() << std::endl;
-
-        //////////////////////////////////////////////////////////////////////////////////////////////////
-
-
         //////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////      Use Simulation model to update next step            ////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////

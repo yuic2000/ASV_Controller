@@ -34,22 +34,6 @@ int main(int argc, char **argv) {
     // Publish thrust commands
     auto cmd_pub = std::make_shared<MPCCmdPublishNode>();
 
-    // // Get initial states from Ground-truth Odometry
-    // VectorXd x_wrld;
-    // auto start_time = std::chrono::high_resolution_clock::now();
-
-    // while (x_wrld.size() == 0) {
-    //     std::cout << "Waiting for ground truth odometry..." << std::endl;
-    //     rclcpp::spin_some(gtodom_sub);
-
-    //     x_wrld = gtodom_sub->get_x_wrld();
-    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    // }
-    // auto end_time = std::chrono::high_resolution_clock::now();
-
-    // std::chrono::duration<double> duration = end_time - start_time;
-    // std::cout << "Time taken by main: " << duration.count() << " seconds" << std::endl;
-
 
     vector<Logger> Logger_eMPC_list;
 
@@ -69,30 +53,6 @@ int main(int argc, char **argv) {
         VectorXd q0_vec(4);
         q0_vec << q0.coeffs();
 
-        // setting initial states from python random values
-        // Vector4d q0_vec;
-        // q0_vec << 0.0, 0.0, -0.05024832, 0.99873676;    // x, y, z, w 
-        // Vector3d p0;
-        // p0 << -4.87036884, 0.24831239, 0.0;
-        // Vector3d w0;
-        // w0 << -0.0, -0.0, -0.0;
-        // Vector3d v0;
-        // v0 << 0.5, 0.0, -0.0;
-
-        ///////////////////////////////////////////////////////////////////////////////////
-
-        ///////////////////////////////////////////////////////////////////////////////////
-        // setting initial states from Ground-tryuth Odometry
-        // rclcpp::spin_some(gtodom_sub);
-        // VectorXd x_wrld = gtodom_sub->get_x_wrld();
-        // std::cout << "x_wrld: " << x_wrld.size() << std::endl;
-        // Vector4d q0_vec = x_wrld.segment(0, 4);
-        // Vector3d p0 = x_wrld.segment(4, 3);
-        // Vector3d w0 = x_wrld.segment(7, 3);
-        // Vector3d v0 = x_wrld.segment(10, 3);
-        
-        ///////////////////////////////////////////////////////////////////////////////////
-
 
         Logger_eMPC = sim_mpc(q0_vec, p0, w0, v0, param, cmd_pub, gtodom_sub);
         Logger_eMPC_list.push_back(Logger_eMPC);
@@ -107,6 +67,8 @@ int main(int argc, char **argv) {
     // Destroy nodes and shutdown
     rclcpp::shutdown();
 
+
+    // Save data to file
     ofstream file;
     if (mode == 1) {
         file.open("zigzag_data.bin", ios::binary);
