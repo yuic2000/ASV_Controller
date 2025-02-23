@@ -1,5 +1,12 @@
 #include "../../include/mpc/utils/LieGroup.h"
 
+// Convert quaternion to rotation matrix
+Matrix3d quat2rotm(const Vector4d& quat) {
+    Quaterniond q(quat);        // w, x, y, z
+    q.normalize();
+    return q.toRotationMatrix();
+}
+
 Matrix3d skew(const Vector3d& w) {
     Matrix3d m;
     m << 0, -w.z(), w.y(),

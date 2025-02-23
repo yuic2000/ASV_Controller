@@ -19,8 +19,6 @@
 
 using namespace Eigen;
 
-MatrixXd quat2rotm(const Vector4d& quat);
-
 VectorXd eMPC(
     const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     const Param& param);

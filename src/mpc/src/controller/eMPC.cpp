@@ -1,11 +1,4 @@
 #include "../../include/mpc/controller/eMPC.h"
-
-
-MatrixXd quat2rotm(const Vector4d& quat) {
-    Quaterniond q(quat); // w, x, y, z
-    q.normalize();
-    return q.toRotationMatrix();
-}
  
 
 VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
@@ -54,7 +47,7 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
 
 
     // Setup OSQP problem
-    OSQPSolver*   solver   = NULL;
+    OSQPSolver*   solver   = nullptr;
     OSQPSettings *settings = (OSQPSettings *)malloc(sizeof(OSQPSettings));
     osqp_set_default_settings(settings);
     if (settings) {
