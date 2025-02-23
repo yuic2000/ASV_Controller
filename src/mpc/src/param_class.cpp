@@ -6,11 +6,11 @@ using namespace std;
 // Param class constructor
 Param::Param() {
     mode = 2;               // 1: zigzag, 2: circling
-    dt = 0.05; 
+    dt = 0.05;              // MPC simulation time step, model: 20Hz, Gt: 25 Hz
     Nx = 12; 
     Nu = 2; 
     Nt = 100; 
-    Nsim = (int)(ceil(65.0 / 0.05));
+    Nsim = (int)(ceil(65.0 / dt));
     V_c = 0.5;
     beta_c = 1.0;
 
@@ -30,6 +30,7 @@ Param::Param() {
     // cost matrices
     diag_values_cost = VectorXd(12);
     diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
+    // diag_values_cost << 1e-5, 1e-5, 5, 100, 100, 1e-5, 1e-5, 1e-5, 1e-5, 10, 1e-5, 1e-5;
     P = diag_values_cost.asDiagonal() * 10;
     Q = diag_values_cost.asDiagonal() * 1;
     R = MatrixXd::Identity(2, 2) * 1e-5;
