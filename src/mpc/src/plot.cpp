@@ -2,9 +2,14 @@
 
 namespace plt = matplotlibcpp;
 
-void plot_mpc(const std::vector<Logger>& Logger_list, const MatrixXd& X_ref, double dt) {
-    int axis_font_size = 12;
+void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
+    const double dt = param.dt;
+    const int Nt = param.Nt;
+    const int Nsim = param.Nsim;
+    const MatrixXd& X_ref = param.X_ref;
+
     std::vector<double> x_lim = {0, 60};
+    int axis_font_size = 12;
 
     // Error plots
     plt::figure_size(1200, 500);
@@ -72,8 +77,8 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const MatrixXd& X_ref, dou
     plt::plot(x, y, "r-.", {{"linewidth", "2"}, {"label", "MPC"}});
 
     // Plot reference trajectory
-    std::vector<double> x_ref(X_ref.col(4).data(), X_ref.col(4).data() + 1200);
-    std::vector<double> y_ref(X_ref.col(5).data(), X_ref.col(5).data() + 1200);
+    std::vector<double> x_ref(X_ref.col(4).data(), X_ref.col(4).data() + (Nsim - Nt + 1));
+    std::vector<double> y_ref(X_ref.col(5).data(), X_ref.col(5).data() + (Nsim - Nt + 1));
     plt::plot(x_ref, y_ref, "k-", {{"linewidth", "3"}, {"label", "Reference"}});
 
     plt::axis("equal");
