@@ -15,6 +15,8 @@ message("Project source dir: ${PROJECT_SOURCE_DIR}")
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 
 
@@ -30,6 +32,8 @@ message("Python3 library dir: ${Python3_LIBRARIES}")
 include_directories( SYSTEM
     ${rclcpp_INCLUDE_DIRS}
     ${std_msgs_INCLUDE_DIRS}
+    ${nav_msgs_INCLUDE_DIRS}
+    ${geometry_msgs_INCLUDE_DIRS}
     ${rcl_interfaces_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS} 
     ${Python3_INCLUDE_DIRS}
@@ -51,6 +55,7 @@ add_library(mpc_lib
 
 add_library(mpc_communication
     ${PROJECT_SOURCE_DIR}/src/communication/mpc_cmd_pub.cpp
+    ${PROJECT_SOURCE_DIR}/src/communication/gtodom_sub.cpp
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/main.cpp)
@@ -64,6 +69,8 @@ target_link_libraries(${PROJECT_NAME}
 ament_target_dependencies(${PROJECT_NAME} 
     rclcpp 
     std_msgs 
+    nav_msgs
+    geometry_msgs
     rcl_interfaces
     Python3
 )

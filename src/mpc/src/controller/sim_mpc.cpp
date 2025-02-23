@@ -1,10 +1,9 @@
 #include "../../include/mpc/controller/sim_mpc.h"
 
 
-Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const VectorXd& v0, 
-    const Param& param, const std::shared_ptr<MPCCmdPublishNode>& cmd_pub) {
+Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const VectorXd& v0, const Param& param, 
+    const std::shared_ptr<MPCCmdPublishNode>& cmd_pub, const std::shared_ptr<GtOdomSubscriberNode>& gtodom_sub) {
     
-    // Eigen::setNbThreads(6); // Use 4 threads
 
     const MatrixXd X_ref = param.X_ref;
     const MatrixXd xi_ref = param.xi_ref;
@@ -46,9 +45,29 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
         // std::cout << "Elapsed time: " << elapsed.count() << " seconds" << std::endl;
         logger.taken_time += elapsed.count();
 
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////      Use Ground-truth Odometry to update next step       ////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // auto listener_start = std::chrono::high_resolution_clock::now();
+        // rclcpp::spin_some(gtodom_sub);
+        // VectorXd x_wrld = gtodom_sub->get_x_wrld();
+        // // std::cout << "x_gtOdom: " << x_wrld.transpose() << std::endl;
+        // std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
+        // x0 = x_wrld;
+        // std::cout << "x0: " << x0.transpose() << std::endl;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////      Use Simulation model to update next step            ////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        // Update x_blue four times for simulation frequency, 4*dt
         Quaterniond quat(x0(3), x0(0), x0(1), x0(2));   // w, x, y, z
         VectorXd euler_angles = EulerAngles<double, EulerSystemZYX>(quat.normalized().toRotationMatrix()).angles();
-
 
         VectorXd x_blue(12);
         x_blue << x0.segment(10, 3), x0.segment(7, 3), x0.segment(4, 3), euler_angles.reverse();
@@ -70,6 +89,8 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
 
         // Update x0 for the next iteration
         x0 << quat_vec, x_blue.segment(6, 3), x_blue.segment(3, 3), x_blue.segment(0, 3);
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
 
         // Compute Xd and X0
         Matrix4d Xd = Matrix4d::Identity();
