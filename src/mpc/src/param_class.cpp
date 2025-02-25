@@ -6,12 +6,12 @@ using namespace std;
 // Param class constructor
 Param::Param() {
     mode = 1;                       // 1: zigzag, 2: circling
-    dt = 0.05;                      // MPC simulation time step, (for blueboat 20~25Hz)
+    dt = 0.04;                      // MPC simulation time step, (for blueboat 20~25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, 65 sec
-    V_c = 0.5;
+    Nt = 100;                       // MPC planning time, 4 sec
+    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    V_c = 0.0;
     beta_c = 1.0;
 
     I = MatrixXd(6, 6);
@@ -40,10 +40,9 @@ Param::Param() {
     // umax = VectorXd::Constant(Nu, 115); 
     // umin = -VectorXd::Constant(Nu, 65);
 
-    // for blueboat model control limits, converge when using 75N after changing propeller lever arms to 0.1143
-    umax = VectorXd::Constant(Nu, 75);      // should be 35 N 
-    umin = -VectorXd::Constant(Nu, 60);     // should be -25 N
-
+    // for blueboat model control limits
+    umax = VectorXd::Constant(Nu, 40);      // should be 35 N 
+    umin = -VectorXd::Constant(Nu, 30);     // should be -25 N
     //////////////////////////////////////////////////////////////////////////////////
 
     // cost matrices

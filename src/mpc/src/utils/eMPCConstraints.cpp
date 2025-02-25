@@ -100,7 +100,7 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         
         MatrixXd Bc = MatrixXd::Zero(12, 2);
         // Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.395, -0.395, 1, 1, 0, 0, 0, 0).finished(); // for otter simulation model
-        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.1143, -0.1143, 1, 1, 0, 0, 0, 0).finished();  // for blueboat model
+        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.285, -0.285, 1, 1, 0, 0, 0, 0).finished();  // for blueboat model
         
         VectorXd b = (G + G2) * x0.segment<6>(7);
         b(2) += 45.265 * (10 * abs(xid(k, 2))) * xid(k, 2);
