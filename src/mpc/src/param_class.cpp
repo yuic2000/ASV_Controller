@@ -11,11 +11,12 @@ Param::Param() {
     Nu = 2; 
     Nt = 100;                       // MPC planning time, 4 sec
     Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
-    V_c = 0.0;
-    beta_c = 1.0;
+    V_c = 0.0;                      // current speed (m/s)
+    beta_c = 1.0;                   // current direction (rad)
 
+    // Mass and Inertia matrix
     I = MatrixXd(6, 6);
-    // // Inertia matrix, from otter simulation model
+    // from otter simulation model
     // I << 17.1572, 0, 4.4, 0, 11, 0,
     //      0, 37.07, 0, -11, 0, -11,
     //      4.4, 0, 45.265, 0, 11, 0,
@@ -23,7 +24,7 @@ Param::Param() {
     //      11, 0, 11, 0, 137.5, 0,
     //      0, -11, 0, 0, 0, 110;
 
-    // Mass matrix, from Blueboat CAD model
+    // from Blueboat CAD model
     I << 2.2759,   -0.6860,  -0.1751,   0,      3.53,     0,
         -0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53,
         -0.1751,  -0.0234,  10.5172,   0,      3.53,     0,
@@ -45,7 +46,11 @@ Param::Param() {
     umin = -VectorXd::Constant(Nu, 30);     // should be -25 N
     //////////////////////////////////////////////////////////////////////////////////
 
-    // cost matrices
+    // MPC cost matrices
+    // [0:3] is angle: roll, pitch, yaw ,
+    // [3:6] is position: x, y, z
+    // [6:9] is angular velocity: roll, pitch, yaw,
+    // [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
     diag_values_cost = VectorXd(12);
     diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
     P = diag_values_cost.asDiagonal() * 10;

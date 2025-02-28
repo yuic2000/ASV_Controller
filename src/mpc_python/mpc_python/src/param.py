@@ -28,7 +28,7 @@ class Param:
         self.umax = np.ones(self.Nu) * 40           # 3.5 kgF
         self.umin = -np.ones(self.Nu) * 30          # -3.0 kgF
 
-        # Mass matrix, from Lie Group MPC paper, original
+        # Mass and Inertia matrix, from Otter USV
         # self.I = np.array([
         #     [17.1572,   0,     4.4,     0,     11,     0],
         #     [0,       37.07,    0,     -11,     0,   -11],
@@ -48,6 +48,10 @@ class Param:
         ])
 
         # MPC cost matrices
+        # [0:3] is angle: roll, pitch, yaw ,
+        # [3:6] is position: x, y, z
+        # [6:9] is angular velocity: roll, pitch, yaw,
+        # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
         self.P = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 10
         self.Q = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 1
         self.R = np.eye(2) * 1e-5
@@ -84,8 +88,6 @@ class Param:
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
         
         # self.X_ref[:, 5] += 2   # offset in y direction, use when using ground truth odometry
-        
-
 
 
 class Logger:
