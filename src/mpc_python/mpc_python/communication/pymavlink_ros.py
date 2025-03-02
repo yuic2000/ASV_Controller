@@ -135,6 +135,15 @@ class IntegratedMavlinkController(Node):
             *self.rc_channel_values
         )
 
+    def stop_motors(self):
+        """Safely stop all motors."""
+        try:
+            self._update_channels(1500, 1500)  # Reset to neutral
+            self.send_rc_commands()
+            self.get_logger().info('Motors stopped successfully')
+        except Exception as e:
+            self.get_logger().error(f'Failed to stop motors: {str(e)}')
+
     def __del__(self):
         """Stop motors when the node is destroyed."""
         self._update_channels(1500, 1500)
@@ -148,8 +157,9 @@ def main(args=None):
     try:
         rclpy.spin(controller)
     except KeyboardInterrupt:
-        controller.get_logger().info("Node shutdown")
+        controller.get_logger().info('Shutdown signal received')
     finally:
+        controller.stop_motors()
         controller.destroy_node()
         rclpy.shutdown()
 
