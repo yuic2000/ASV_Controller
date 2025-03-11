@@ -50,7 +50,6 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
     // Main parameters
     const double g = 9.81;                      // acceleration of gravity (m/s^2)
     const double rho = 1025.0;                  // density of water (kg/m^3)
-    
     // for otter simulation model
     // const double L = 2.0;                    // length (m)
     // const double B = 1.08;                   // beam (m)
@@ -59,9 +58,11 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
     // for blueboat CAD model
     const double L = 1.1195;                    // length (m)
     const double B = 0.93;                      // beam (m)
-    const double m = 17.65;                     // mass (kg), for blueboat CAD model
+    const double m = 28.63;                     // mass (kg), for blueboat CAD model
+    // const double m = 17.65;                     // mass (kg), for blueboat CAD model
 
-    Vector3d rg_vec(0.2, 0.0, -0.2);            // CG for hull only (m)
+    Vector3d rg_vec(0.2, 0.0, -0.2);            // CG for hull only (m), for otter simulation model
+    // Vector3d rg_vec(0.3769, 0.00872, -0.617);      // CG for hull only (m), for blueboat CAD model
     double R44 = 0.4 * B;                       // radii of gyrations (m)
     double R55 = 0.25 * L;
     double R66 = 0.25 * L;
