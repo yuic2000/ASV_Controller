@@ -46,11 +46,11 @@ def plot_mpc(Logger_list, X_ref, dt):
     # Plot the last trajectory result
     logger = Logger_list[-1]
     # Plot MPC trajectory
-    ax.plot(logger.X[4, :1200], logger.X[5, :1200], 
+    ax.plot(logger.X[4, :], logger.X[5, :], 
             color='r', linestyle='-.', linewidth=2, label='MPC')
     
     # Plot reference trajectory
-    ax.plot(X_ref[:1200, 4], X_ref[:1200, 5], 'k-', 
+    ax.plot(X_ref[:, 4], X_ref[:, 5], 'k-', 
             linewidth=3, label='Reference')
     
     # Plot all trajectory results
@@ -68,21 +68,6 @@ def plot_mpc(Logger_list, X_ref, dt):
     ax.legend()
     ax.set_xlabel('x')
     ax.set_ylabel('y')
-
-    # Plot control inputs
-    # fig3 = plt.figure(figsize=(10, 8))
-    # ax = fig3.add_subplot(111)
-    # logger = Logger_list[-1]
-
-    # t = np.arange(0, logger.U.shape[1] * dt, dt)
-
-    # ax.plot(t, logger.U[0, :1200], 'r-', linewidth=2, label='Right thrust')
-    # ax.plot(t, logger.U[1, :1200], 'b-', linewidth=2, label='Left thrust')
-
-    # ax.set_title("Propeller thrusts", fontsize=axis_font_size)
-    # ax.grid(True)
-    # ax.set_ylabel("Thrust (N)")
-    # ax.set_xlabel("Time (s)")
 
     for idx, logger in enumerate(Logger_list):
         print(f'{idx+1} simulation: {logger.taken_time} sec')

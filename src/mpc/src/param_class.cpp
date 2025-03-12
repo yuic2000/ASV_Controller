@@ -6,16 +6,17 @@ using namespace std;
 // Param class constructor
 Param::Param() {
     mode = 1;                       // 1: zigzag, 2: circling
-    dt = 0.05;                      // MPC simulation time step, (for blueboat 20~25Hz)
+    dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, 65 sec
-    V_c = 0.5;
-    beta_c = 1.0;
+    Nt = 125;                       // MPC planning time, 5 sec
+    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    V_c = 0.0;                      // current speed (m/s)
+    beta_c = 1.0;                   // current direction (rad)
 
+    // Mass and Inertia matrix
     I = MatrixXd(6, 6);
-    // // Inertia matrix, from otter simulation model
+    // from otter simulation model
     // I << 17.1572, 0, 4.4, 0, 11, 0,
     //      0, 37.07, 0, -11, 0, -11,
     //      4.4, 0, 45.265, 0, 11, 0,
@@ -23,13 +24,13 @@ Param::Param() {
     //      11, 0, 11, 0, 137.5, 0,
     //      0, -11, 0, 0, 0, 110;
 
-    // Mass matrix, from Blueboat CAD model
-    I << 2.2759,   -0.6860,  -0.1751,   0,      3.53,     0,
-        -0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53,
-        -0.1751,  -0.0234,  10.5172,   0,      3.53,     0,
-         0,         -3.53,      0,    18.4444,   0,       0,
-         3.53,        0,      3.53,     0,     44.125,    0,
-         0,         -3.53,      0,      0,       0,    35.3;
+    // from Blueboat CAD model, 28.63 kg
+    I << 14.47,  -0.35,  6.55,    0,   17.66,   0.25,
+         -0.35,  21.55,  0.13, -17.66,   0,   -10.79,
+          6.55,   0.13, 12.33,  -0.25, 10.79,      0,
+          0,    -17.66, -0.25,  34.31,   0,        0,
+          17.66,   0,   10.79,    0,   71.58,      0,
+          0.25, -10.79,    0,     0,     0,    57.26;
 
 
     // state and control limits
@@ -40,13 +41,16 @@ Param::Param() {
     // umax = VectorXd::Constant(Nu, 115); 
     // umin = -VectorXd::Constant(Nu, 65);
 
-    // for blueboat model control limits, converge when using 75N after changing propeller lever arms to 0.1143
-    umax = VectorXd::Constant(Nu, 75);      // should be 35 N 
-    umin = -VectorXd::Constant(Nu, 60);     // should be -25 N
-
+    // for blueboat model control limits
+    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
+    umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
-    // cost matrices
+    // MPC cost matrices
+    // [0:3] is angle: roll, pitch, yaw ,
+    // [3:6] is position: x, y, z
+    // [6:9] is angular velocity: roll, pitch, yaw,
+    // [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
     diag_values_cost = VectorXd(12);
     diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
     P = diag_values_cost.asDiagonal() * 10;

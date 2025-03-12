@@ -23,7 +23,7 @@ def sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub):
     Err = []
     Err2 = []
 
-    logger = Logger(Nsim)
+    logger = Logger(Nsim, Nt)
     solver = {'init': 0}
     logger.taken_time = 0
 

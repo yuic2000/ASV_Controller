@@ -6,28 +6,29 @@ from scipy.spatial.transform import Rotation
 
 class Param:
     def __init__(self):
-        self.dt = 0.05                               # control frequency, 10 Hz, original 0.05
-        self.Nsim = int(np.ceil(65 / self.dt))      # Total simulation time + Planning time
-        self.mode = 1                               # mode 1: zigzag, mode 2: circling
-        self.V_c = 0.0                              # Ocean current velocity, 0.5
+        self.dt = 0.04                              # control frequency, 25 Hz, original 20Hz
+        self.Nsim = int(np.ceil(64 / self.dt))      # Total simulation time + Planning time
+        self.mode = 2                               # mode 1: zigzag, mode 2: circling
+        self.V_c = 0.5                              # Ocean current velocity, 0.5
         self.beta_c = 0.0                           # Ocean current direction, 1
 
         self.Nx = 12                                # dimension x   
         self.Nu = 2                                 # dimension of u
-        self.Nt = 100                               # horizon length, original 100
+        self.Nt = 100                               # horizon length
 
         # state constraints
         self.xmax = np.inf * np.ones(self.Nx)
         self.xmin = -self.xmax
-        # control constraints
+        
+        # control constraints, for Otter
         # self.umax = np.ones(self.Nu) * 115
         # self.umin = -np.ones(self.Nu) * 65
-        self.umax = np.ones(self.Nu) * 35           # 3.5 kgF
-        self.umin = -np.ones(self.Nu) * 25          # -2.8 kgF
-        # self.umax = np.ones(self.Nu) * 10           # 1 kgF
-        # self.umin = -np.ones(self.Nu) * 10          # -1 kgF
 
-        # Mass matrix, from Lie Group MPC paper, original
+        # control constraints, for blueboat
+        self.umax = np.ones(self.Nu) * 40           # 3.5 kgF
+        self.umin = -np.ones(self.Nu) * 30          # -3.0 kgF
+
+        # Mass and Inertia matrix, from Otter USV
         # self.I = np.array([
         #     [17.1572,   0,     4.4,     0,     11,     0],
         #     [0,       37.07,    0,     -11,     0,   -11],
@@ -45,22 +46,14 @@ class Param:
             [3.53,        0,      3.53,     0,     44.125,    0],
             [0,         -3.53,      0,      0,       0,    35.3]
         ])
-        # Rigid Body matrix from blueboat CAD model
-        # Irb = np.array([
-        #     [17.65,   0,     0,       0,    -3.53,        0],
-        #     [0,     17.65,   0,     3.53,     0,       3.53],
-        #     [0,       0,   17.65,     0,    -3.53,        0],
-        #     [0,      3.53,   0,    1.4759, -0.0686, -0.1751],
-        #     [-3.53,   0,   -3.53, -0.0686,  1.8913, -0.0234],
-        #     [0,      3.53,   0,   -0.1751, -0.0234,  1.8157]
-        # ])
-
 
         # MPC cost matrices
+        # [0:3] is angle: roll, pitch, yaw ,
+        # [3:6] is position: x, y, z
+        # [6:9] is angular velocity: roll, pitch, yaw,
+        # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
         self.P = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 10
         self.Q = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 1
-        # self.P = np.diag([1e-5, 1e-5, 0.1, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 10
-        # self.Q = np.diag([1e-5, 1e-5, 0.1, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 1
         self.R = np.eye(2) * 1e-5
 
         # initial states
@@ -68,7 +61,6 @@ class Param:
         self.p0_ref = np.array([0, 0, 0])               # desired position
         self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
         self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
-        # self.v0_ref = np.array([0.25, 0, 0])             # desired surge velocity 0.5 m/s
 
         self.x0_ref = np.concatenate([self.q0_ref, self.p0_ref])
         self.xid_ref = np.concatenate([self.w0_ref, self.v0_ref])
@@ -96,14 +88,12 @@ class Param:
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
         
         # self.X_ref[:, 5] += 2   # offset in y direction, use when using ground truth odometry
-        
-
 
 
 class Logger:
-    def __init__(self, Nsim):
-        self.X = np.zeros((13, Nsim - 11))
-        self.Err = np.zeros((6, Nsim - 12))
-        self.U = np.zeros((2, Nsim - 12))
-        self.Err2 = np.zeros((4, Nsim - 12))
+    def __init__(self, Nsim, Nt):
+        self.X = np.zeros((13, Nsim - Nt))
+        self.Err = np.zeros((6, Nsim - Nt))
+        self.U = np.zeros((2, Nsim - Nt))
+        self.Err2 = np.zeros((4, Nsim - Nt))
         self.taken_time = 0

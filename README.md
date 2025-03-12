@@ -2,14 +2,20 @@
 
 ASV_Controller is a project that implements a Lie MPC (Model Predictive Control) controller in both C++ and Python. This project contains two main components:
 
-- **mpc**: A Lie MPC controller implemented in C++.
-- **mpc_python**: A Lie MPC controller implemented in Python.
+- **mpc**: a Lie MPC controller implemented in C++.
+- **mpc_python**: a Lie MPC controller implemented in Python.
 
 ## Requirements
 
-- ROS 2 (Rolling or later)
+- ROS 2 (Humble or later)
 - colcon build tool
 - C++ and Python development environment
+
+## Used Packages
+
+### OSQP - QP Solver
+
+This project uses the [OSQP](https://osqp.org/docs/get_started/) solver to solve the optimization problem in the Lie MPC controller. Make sure to install this package to run the code.
 
 ## Installation
 
@@ -39,7 +45,7 @@ ros2 run mpc mpc
 
 ### Python Lie MPC Controller
 
-After building the project, you can run the C++ Lie MPC controller using the following command:
+After building the project, you can run the Python Lie MPC controller using the following command:
 
 ```bash
 ros2 run mpc_python main

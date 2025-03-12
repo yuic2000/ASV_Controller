@@ -50,21 +50,33 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
     // Main parameters
     const double g = 9.81;                      // acceleration of gravity (m/s^2)
     const double rho = 1025.0;                  // density of water (kg/m^3)
-    const double L = 2.0;                       // length (m)
-    const double B = 1.08;                      // beam (m)
-    // const double m = 55.0;                      // mass (kg), for otter simulation model
-    const double m = 17.65;                      // mass (kg), for blueboat CAD model
-    Vector3d rg_vec(0.2, 0.0, -0.2);            // CG for hull only (m)
+    // for otter simulation model
+    // const double L = 2.0;                    // length (m)
+    // const double B = 1.08;                   // beam (m)
+    // const double m = 55.0;                   // mass (kg), for otter simulation model
+
+    // for blueboat CAD model
+    const double L = 1.1195;                    // length (m)
+    const double B = 0.93;                      // beam (m)
+    const double m = 28.63;                     // mass (kg), for blueboat CAD model
+
+    // Vector3d rg_vec(0.2, 0.0, -0.2);            // CG for hull only (m), for otter simulation model
+    Vector3d rg_vec(0.3769, 0.00872, -0.617);      // CG for hull only (m), for blueboat CAD model
     double R44 = 0.4 * B;                       // radii of gyrations (m)
     double R55 = 0.25 * L;
     double R66 = 0.25 * L;
     double T_yaw = 1.0;                         // time constant in yaw (s)
     double Umax = 6.0 * 0.5144;                 // maximum forwardspeed (m/s)
 
-    // Data for one pontoon
-    double B_pont = 0.25;                       // beam of one pontoon (m)
+    // // Data for one pontoon, for otter simulation model
+    // double B_pont = 0.25;                       // beam of one pontoon (m)
     // double y_pont = 0.395;                      // distance from centerline to waterarea center (m), for otter simulation model
-    double y_pont = 0.1143;                     // distance from centerline to waterarea center (m), for blueboat model
+    // double Cw_pont = 0.75;                      // waveline area coefficient (-)
+    // double Cb_pont = 0.4;                       // block coefficient
+
+    // Data for one pontoon, for blueboat model
+    double B_pont = 0.18;                       // beam of one pontoon (m)
+    double y_pont = 0.285;                      // distance from centerline to waterarea center (m), for blueboat model
     double Cw_pont = 0.75;                      // waveline area coefficient (-)
     double Cb_pont = 0.4;                       // block coefficient
 
@@ -87,17 +99,20 @@ VectorXd blue_boat(const VectorXd& x, const VectorXd& n, double V_c, double beta
     // Inertia dyadic, volume displacement, draft
     double nabla = (m + mp) / rho;                        // volume displacement (m^3)
     double T = nabla / (2.0 * Cb_pont * B_pont * L);      // draft (m)
-    Matrix3d Ig_CG = Matrix3d::Identity();
-    Ig_CG(0, 0) = m * R44 * R44;
-    Ig_CG(1, 1) = m * R55 * R55;
-    Ig_CG(2, 2) = m * R66 * R66;
+    // Matrix3d Ig_CG = Matrix3d::Identity();
+    // Ig_CG(0, 0) = m * R44 * R44;
+    // Ig_CG(1, 1) = m * R55 * R55;
+    // Ig_CG(2, 2) = m * R66 * R66;
 
-    rg_vec = (m * rg_vec + mp * rp) / (m + mp);          // CG location corrected for payload (m)
-    Matrix3d smtrx_rg_sq = Smtrx(rg_vec) * Smtrx(rg_vec);
-    Matrix3d smtrx_rp_sq = Smtrx(rp) * Smtrx(rp);
-    Matrix3d Ig = Ig_CG - m * smtrx_rg_sq - mp * smtrx_rp_sq; // hull + payload in CO (kg m^2)
-
-    // Experimental propeller data including lever arms
+    // rg_vec = (m * rg_vec + mp * rp) / (m + mp);          // CG location corrected for payload (m)
+    // Matrix3d smtrx_rg_sq = Smtrx(rg_vec) * Smtrx(rg_vec);
+    // Matrix3d smtrx_rp_sq = Smtrx(rp) * Smtrx(rp);
+    // Matrix3d Ig = Ig_CG - m * smtrx_rg_sq - mp * smtrx_rp_sq; // hull + payload in CO (kg m^2)
+    Matrix3d Ig;
+    Ig << 2.97, -0.26, -0.11,
+         -0.26,  3.66, -0.03,
+         -0.11, -0.03,  3.06;
+    
     double l1 = -y_pont;                                // lever arm, left propeller (m)
     double l2 = y_pont;                                 // lever arm, right propeller (m)
     double k_pos = 0.02216 / 2.0;                       // Positive Bollard, one propeller

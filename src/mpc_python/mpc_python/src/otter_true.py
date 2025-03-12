@@ -59,11 +59,17 @@ def otter_true(x, n, V_c, beta_c):
     # main parameters
     g = 9.81                        # acceleration of gravity (m/s^2)
     rho = 1025                      # density of water (kg/m^3)
-    L = 2.0                         # length (m)
-    B = 1.08                        # beam (m)
-    # m = 55.0                      # mass (kg)
-    m = 17.65                        # mass (kg), from Blueboat CAD model, added by yui Feb 17 2025
-    # m = 250.18                        # mass (kg), from vrx simulation, added by yui Feb 1 2025
+
+    # for the Otter simulation model
+    # L = 2.0                         # length (m)
+    # B = 1.08                        # beam (m)
+    # m = 55.0                        # mass (kg)
+    
+    # for the Blueboat model
+    L = 1.1195                        # length (m)
+    B = 0.93                          # beam (m)
+    m = 17.65                         # mass (kg), from Blueboat CAD model, added by yui Feb 17 2025
+
     rg = np.array([0.2, 0, -0.2])   # CG for hull only (m)
     R44 = 0.4 * B                   # radii of gyrations (m)  
     R55 = 0.25 * L   
@@ -71,9 +77,15 @@ def otter_true(x, n, V_c, beta_c):
     T_yaw = 1                       # time constan in yaw (s)
     Umax = 6 * 0.5144               # maximum forwardspeed (m/s)  
 
-    # Data for one pontoon
-    B_pont = 0.25                   # beam of one pontoon (m)
-    y_pont = 0.395                  # distance from centerline to waterarea center (m)
+    # Data for one pontoon, for otter simulation model
+    # B_pont = 0.25                   # beam of one pontoon (m)
+    # y_pont = 0.395                  # distance from centerline to waterarea center (m)
+    # Cw_pont = 0.75                  # waveline area coefficient (-)
+    # Cb_pont = 0.4                   # block coefficient, computed from m = 55kg
+
+    # Data for one pontoon, for blueboat model
+    B_pont = 0.18                   # beam of one pontoon (m)
+    y_pont = 0.285                 # distance from centerline to waterarea center (m)
     Cw_pont = 0.75                  # waveline area coefficient (-)
     Cb_pont = 0.4                   # block coefficient, computed from m = 55kg
 
