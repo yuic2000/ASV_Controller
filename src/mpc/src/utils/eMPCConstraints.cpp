@@ -19,33 +19,22 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
     const int Noff = Nx * (Nt + 1);
     
     MatrixXd D = MatrixXd::Zero(6, 6);  // Kp, Mq, Nr, Xu, Yv, Zw
-    // D.diagonal() << -54.3823, -246.0496, -45.265 * (1 + 10 * abs(x0(9))), -77.5544, 0, -546.4805;  // for otter simulation model
     D.diagonal() << -12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0(9))), -77.5544, 0, -250.3037;     // for blueboat model, 28.63 kg
     
     MatrixXd I_inv = I.inverse();
     
     for (int k = 0; k < Nt; ++k) {
         MatrixXd D_t = D;
-        // D_t(2, 2) -= 45.265 * (10 * abs(xid(k, 2)));        // for otter simulation model
         D_t(2, 2) -= 12.3312 * (10 * abs(xid(k, 2)));           // for blueboat model
 
-        MatrixXd Irb(6, 6);
-        // for otter simulation model
-        // Irb << 55.0, 0, 0, 0, -11.0, 0,
-        //        0, 55.0, 0, 11.0, 0, 11.0,
-        //        0, 0, 55.0, 0, -11.0, 0,
-        //        0, 11.0, 0, 14.6643, 0, 4.4,
-        //        -11.0, 0, -11.0, 0, 22.55, 0,
-        //        0, 11.0, 0, 4.4, 0, 18.15;
-
         // for blueboat CAD model, 28.63 kg
+        MatrixXd Irb(6, 6);
         Irb << 28.63,      0,      0,     0,   -17.66, -0.25,
                0,       28.63,     0,   17.66,    0,   10.79,
                0,          0,    28.63,  0.25, -10.79,     0,
                0,        17.66,   0.25, 13.87,  -0.35,  6.55,
               -17.66,      0,   -10.79, -0.35,  18.62,  0.13,
               -0.25,    10.79,     0,    6.55,   0.13,  7.13;
-
 
         MatrixXd M11 = Irb.block<3, 3>(0, 0);
         MatrixXd M12 = Irb.block<3, 3>(0, 3);
@@ -67,7 +56,6 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         Crb.block<3, 3>(3, 0) = skew(M11 * xi_v) + skew(M12 * xi_w);
 
         MatrixXd Iam = MatrixXd::Zero(6, 6);
-        // Iam.diagonal() << 5.2815, 82.5, 55, 2.4929, 14.52, 27.115;          // from otter simulation model
         Iam.diagonal() << 5.678, 42.945, 28.63, 0.594, 2.928, 5.202;      // from blueboat CAD model, 28.63 kg
 
         MatrixXd Mam11 = Iam.block<3, 3>(0, 0);
@@ -102,11 +90,9 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         Ac.block<6, 6>(6, 6) = H;
         
         MatrixXd Bc = MatrixXd::Zero(12, 2);
-        // Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.395, -0.395, 1, 1, 0, 0, 0, 0).finished(); // for otter simulation model
         Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.285, -0.285, 1, 1, 0, 0, 0, 0).finished();  // for blueboat model
         
         VectorXd b = (G + G2) * x0.segment<6>(7);
-        // b(2) += 45.265 * (10 * abs(xid(k, 2))) * xid(k, 2);     // for otter simulation model
         b(2) += 12.3312 * (10 * abs(xid(k, 2))) * xid(k, 2);     // for blueboat model
         b = -I_inv * b;
         VectorXd hc(12);

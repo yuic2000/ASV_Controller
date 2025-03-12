@@ -15,16 +15,8 @@ Param::Param() {
     beta_c = 1.0;                   // current direction (rad)
 
     // Mass and Inertia matrix
-    I = MatrixXd(6, 6);
-    // from otter simulation model
-    // I << 17.1572, 0, 4.4, 0, 11, 0,
-    //      0, 37.07, 0, -11, 0, -11,
-    //      4.4, 0, 45.265, 0, 11, 0,
-    //      0, -11, 0, 60.2815, 0, 0,
-    //      11, 0, 11, 0, 137.5, 0,
-    //      0, -11, 0, 0, 0, 110;
-
     // from Blueboat CAD model, 28.63 kg
+    I = MatrixXd(6, 6);
     I << 14.47,  -0.35,  6.55,    0,   17.66,   0.25,
          -0.35,  21.55,  0.13, -17.66,   0,   -10.79,
           6.55,   0.13, 12.33,  -0.25, 10.79,      0,
@@ -36,10 +28,6 @@ Param::Param() {
     // state and control limits
     xmax = VectorXd::Constant(Nx, numeric_limits<double>::infinity()); 
     xmin = -xmax; 
-
-    // for otter simulation model control limits
-    // umax = VectorXd::Constant(Nu, 115); 
-    // umin = -VectorXd::Constant(Nu, 65);
 
     // for blueboat model control limits
     umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
