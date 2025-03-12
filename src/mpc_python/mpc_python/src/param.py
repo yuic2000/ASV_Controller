@@ -25,8 +25,8 @@ class Param:
         # self.umin = -np.ones(self.Nu) * 65
 
         # control constraints, for blueboat
-        self.umax = np.ones(self.Nu) * 40           # 3.5 kgF
-        self.umin = -np.ones(self.Nu) * 30          # -3.0 kgF
+        self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
+        self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
 
         # Mass and Inertia matrix, from Otter USV
         # self.I = np.array([
@@ -38,13 +38,21 @@ class Param:
         #     [0,        -11,     0,      0,      0,   110]
         # ])
         # Mass matrix, from Blueboat CAD model
+        # self.I = np.array([
+        #     [2.2759,   -0.6860,  -0.1751,   0,      3.53,     0],
+        #     [-0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53],
+        #     [-0.1751,  -0.0234,  10.5172,   0,      3.53,     0],
+        #     [0,         -3.53,      0,    18.4444,   0,       0],
+        #     [3.53,        0,      3.53,     0,     44.125,    0],
+        #     [0,         -3.53,      0,      0,       0,    35.3]
+        # ])
         self.I = np.array([
-            [2.2759,   -0.6860,  -0.1751,   0,      3.53,     0],
-            [-0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53],
-            [-0.1751,  -0.0234,  10.5172,   0,      3.53,     0],
-            [0,         -3.53,      0,    18.4444,   0,       0],
-            [3.53,        0,      3.53,     0,     44.125,    0],
-            [0,         -3.53,      0,      0,       0,    35.3]
+            [14.47,  -0.35,  6.55,    0,   17.66,   0.25],
+            [-0.35,  21.55,  0.13, -17.66,   0,   -10.79],
+            [6.55,   0.13, 12.33,  -0.25, 10.79,      0],
+            [0,    -17.66, -0.25,  34.31,   0,        0],
+            [17.66,   0,   10.79,    0,   71.58,      0],
+            [0.25, -10.79,    0,     0,     0,    57.26]
         ])
 
         # MPC cost matrices
@@ -74,7 +82,7 @@ class Param:
             xid_ref_rt = self.xid_ref.copy()
             
             if self.mode == 1:  # zigzag maneuver
-                xid_ref_rt[2] = 0.1 * np.cos(i/100)      # 100: 20 Hz, 50: 10 Hz
+                xid_ref_rt[2] = 0.1 * np.cos(i/100)
             
             Xi = np.zeros((4, 4))
             Xi[:3, :3] = skew(xid_ref_rt[:3])

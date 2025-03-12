@@ -68,9 +68,13 @@ def otter_true(x, n, V_c, beta_c):
     # for the Blueboat model
     L = 1.1195                        # length (m)
     B = 0.93                          # beam (m)
-    m = 17.65                         # mass (kg), from Blueboat CAD model, added by yui Feb 17 2025
+    # m = 17.65                         # mass (kg), from Blueboat CAD model
+    m = 28.63                         # mass (kg), from Blueboat CAD model, added by yui Feb 17 2025
 
-    rg = np.array([0.2, 0, -0.2])   # CG for hull only (m)
+
+    # rg = np.array([0.2, 0, -0.2])            # CG for hull only (m), for Otter
+    rg = np.array([0.3769, 0.00872, -0.617])   # CG for hull only (m), for Blueboat
+
     R44 = 0.4 * B                   # radii of gyrations (m)  
     R55 = 0.25 * L   
     R66 = 0.25 * L 
@@ -104,11 +108,14 @@ def otter_true(x, n, V_c, beta_c):
     # Inertia dyadic, volume displacement, draft
     nabla = (m + mp) / rho                              # volume displacement (m^3)
     T = nabla / (2 * Cb_pont * B_pont * L)              # draft (m)
-    Ig_CG = m * np.diag([R44**2, R55**2, R66**2])       # only hull in CG (kg m^2)
-    rg = (m * rg + mp * rp) / (m + mp)                  # CG location corrected for payload (m)
-    smtrx_rg_sq = np.linalg.matrix_power(Smtrx(rg), 2)
-    smtrx_rp_sq = np.linalg.matrix_power(Smtrx(rp), 2)
-    Ig = Ig_CG - m * smtrx_rg_sq - mp * smtrx_rp_sq     # hull + payload in CO (kg m^2)
+    # Ig_CG = m * np.diag([R44**2, R55**2, R66**2])       # only hull in CG (kg m^2)
+    # rg = (m * rg + mp * rp) / (m + mp)                  # CG location corrected for payload (m)
+    # smtrx_rg_sq = np.linalg.matrix_power(Smtrx(rg), 2)
+    # smtrx_rp_sq = np.linalg.matrix_power(Smtrx(rp), 2)
+    # Ig = Ig_CG - m * smtrx_rg_sq - mp * smtrx_rp_sq     # hull + payload in CO (kg m^2)
+    Ig = np.array([[2.97, -0.26, -0.11],
+                   [-0.26,  3.66, -0.03],
+                   [-0.11, -0.03,  3.06]])
 
     # Experitmental propeller data including lever arms
     l1 = -y_pont                                        # lever arm, left propeller (m)     
