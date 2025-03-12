@@ -6,11 +6,11 @@ using namespace std;
 // Param class constructor
 Param::Param() {
     mode = 1;                       // 1: zigzag, 2: circling
-    dt = 0.04;                      // MPC simulation time step, (for blueboat 20~25Hz)
+    dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100;                       // MPC planning time, 4 sec
-    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    Nt = 125;                       // MPC planning time, 5 sec
+    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -25,26 +25,12 @@ Param::Param() {
     //      0, -11, 0, 0, 0, 110;
 
     // from Blueboat CAD model, 28.63 kg
-    I << 3.9926, -0.2554, -0.1061,     0,     5.726,      0,
-        -0.2554,  7.2852, -0.0258,  -5.726,     0,   -5.726,
-        -0.1061, -0.0258,  8.8182,     0,     5.726,      0,
-         0,      -5.726,      0,    34.3081,    0,        0,
-         5.726,     0,    5.726,       0,     71.575,     0,
-         0,      -5.726,      0,       0,      0,     57.26;
-    // I << 3.9926, -0.2554, -0.1061,     0,     17.66,   0.25,
-    //      -0.2554,  7.2852, -0.0258,  -17.66,     0,   -10.79,
-    //      -0.1061, -0.0258,  8.8182,   -0.25,   10.79,      0,
-    //       0,      -17.66,  -0.25,   34.3081,   0,          0,
-    //       17.66,     0,    10.79,     0,     71.575,       0,
-    //       0.25,   -10.79,      0,      0,       0,     57.26;
-
-    // from Blueboat CAD model, 17.65 kg
-    // I << 2.2759,  -0.6860,  -0.1751,   0,      3.53,     0,
-    //     -0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53,
-    //     -0.1751,  -0.0234,  10.5172,   0,      3.53,     0,
-    //      0,         -3.53,      0,    18.4444,   0,       0,
-    //      3.53,        0,      3.53,     0,     44.125,    0,
-    //      0,         -3.53,      0,      0,       0,    35.3;
+    I << 14.47,  -0.35,  6.55,    0,   17.66,   0.25,
+         -0.35,  21.55,  0.13, -17.66,   0,   -10.79,
+          6.55,   0.13, 12.33,  -0.25, 10.79,      0,
+          0,    -17.66, -0.25,  34.31,   0,        0,
+          17.66,   0,   10.79,    0,   71.58,      0,
+          0.25, -10.79,    0,     0,     0,    57.26;
 
 
     // state and control limits
@@ -56,7 +42,7 @@ Param::Param() {
     // umin = -VectorXd::Constant(Nu, 65);
 
     // for blueboat model control limits
-    umax = VectorXd::Constant(Nu, 45);      // should be 35 N 
+    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
     umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
