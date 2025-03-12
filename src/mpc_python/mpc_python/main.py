@@ -41,22 +41,22 @@ def main(args=None):
 
     for k in range(Ns):
         # Setting initial states, for using otter true model
-        q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
-        p0 = np.zeros(3)
-        p0[:2] += (np.random.rand(2)-1) * 2
-        p0[1] += 1.5
-        w0 = (np.random.rand(3) - 0.5) * 0
-        v0 = (np.random.rand(3) - 0.5) * 0
-        v0[0] = 0.5
+        # q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
+        # p0 = np.zeros(3)
+        # p0[:2] += (np.random.rand(2)-1) * 2
+        # p0[1] += 1.5
+        # w0 = (np.random.rand(3) - 0.5) * 0
+        # v0 = (np.random.rand(3) - 0.5) * 0
+        # v0[0] = 0.5
         
         # Read initial states, for using ground truth odometry
-        # rclpy.spin_once(gtOdom_sub)
-        # x_wrld = gtOdom_sub.get_x_wrld()
+        rclpy.spin_once(gtOdom_sub)
+        x_wrld = gtOdom_sub.get_x_wrld()
 
-        # q0 = x_wrld[0:4]
-        # p0 = x_wrld[4:7]
-        # w0 = x_wrld[7:10]
-        # v0 = x_wrld[10:13]
+        q0 = x_wrld[0:4]
+        p0 = x_wrld[4:7]
+        w0 = x_wrld[7:10]
+        v0 = x_wrld[10:13]
 
         Logger_eMPC = sim_mpc(q0, p0, w0, v0, param, cmd_pub, gtOdom_sub)
         Logger_eMPC_list.append(Logger_eMPC)

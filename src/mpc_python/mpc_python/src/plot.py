@@ -46,11 +46,11 @@ def plot_mpc(Logger_list, X_ref, dt):
     # Plot the last trajectory result
     logger = Logger_list[-1]
     # Plot MPC trajectory
-    ax.plot(logger.X[4, :], logger.X[5, :], 
+    ax.plot(logger.X[4, 1:], logger.X[5, 1:], 
             color='r', linestyle='-.', linewidth=2, label='MPC')
     
     # Plot reference trajectory
-    ax.plot(X_ref[:, 4], X_ref[:, 5], 'k-', 
+    ax.plot(X_ref[1:, 4], X_ref[1:, 5], 'k-', 
             linewidth=3, label='Reference')
     
     # Plot all trajectory results

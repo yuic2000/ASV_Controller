@@ -3,13 +3,17 @@ from mpc_python.src.utils.LieGroup import skew
 from scipy.linalg import expm
 from scipy.spatial.transform import Rotation
 
+import rclpy
+from mpc_python.communication.gtodom_sub import GtOdomSubscriberNode
+
 
 class Param:
     def __init__(self):
         self.dt = 0.04                              # control frequency, 25 Hz, original 20Hz
         self.Nsim = int(np.ceil(64 / self.dt))      # Total simulation time + Planning time
-        self.mode = 2                               # mode 1: zigzag, mode 2: circling
-        self.V_c = 0.5                              # Ocean current velocity, 0.5
+
+        self.mode = 1                               # mode 1: zigzag, mode 2: circling
+        self.V_c = 0.0                              # Ocean current velocity, 0.5
         self.beta_c = 0.0                           # Ocean current direction, 1
 
         self.Nx = 12                                # dimension x   
@@ -19,33 +23,12 @@ class Param:
         # state constraints
         self.xmax = np.inf * np.ones(self.Nx)
         self.xmin = -self.xmax
-        
-        # control constraints, for Otter
-        # self.umax = np.ones(self.Nu) * 115
-        # self.umin = -np.ones(self.Nu) * 65
 
         # control constraints, for blueboat
         self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
         self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
 
-        # Mass and Inertia matrix, from Otter USV
-        # self.I = np.array([
-        #     [17.1572,   0,     4.4,     0,     11,     0],
-        #     [0,       37.07,    0,     -11,     0,   -11],
-        #     [4.4,       0,    45.265,   0,     11,     0],
-        #     [0,        -11,     0,    60.2815,  0,     0],
-        #     [11,        0,     11,      0,     137.5,  0],
-        #     [0,        -11,     0,      0,      0,   110]
-        # ])
         # Mass matrix, from Blueboat CAD model
-        # self.I = np.array([
-        #     [2.2759,   -0.6860,  -0.1751,   0,      3.53,     0],
-        #     [-0.6860,   6.5509,  -0.0234, -3.53,     0,   -3.53],
-        #     [-0.1751,  -0.0234,  10.5172,   0,      3.53,     0],
-        #     [0,         -3.53,      0,    18.4444,   0,       0],
-        #     [3.53,        0,      3.53,     0,     44.125,    0],
-        #     [0,         -3.53,      0,      0,       0,    35.3]
-        # ])
         self.I = np.array([
             [14.47,  -0.35,  6.55,    0,   17.66,   0.25],
             [-0.35,  21.55,  0.13, -17.66,   0,   -10.79],
@@ -76,8 +59,23 @@ class Param:
         self.X_ref = self.x0_ref.reshape(1, -1)
         self.xi_ref = self.xid_ref.reshape(1, -1)
 
+
     def get_ref_trajectory(self):   
-        X = np.eye(4)
+        # X = np.eye(4)
+        # X = np.array([              # for vrx map frame
+        #     [1, 0, 0, -532.64],
+        #     [0, 1, 0, 162.5],
+        #     [0, 0, 1, -0.007],
+        #     [0, 0, 0, 1]
+        # ])
+        X = np.array([              # for UWB in MHL
+            [1, 0, 0, 0],
+            [0, 1, 0, 3.57],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+
+
         for i in range(self.Nsim):
             xid_ref_rt = self.xid_ref.copy()
             
