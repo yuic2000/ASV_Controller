@@ -69,18 +69,6 @@ class Param:
     def get_ref_trajectory(self):   
         # X = np.eye(4)
         X = self.init_pose.copy()
-        # X = np.array([              # for vrx map frame
-        #     [1, 0, 0, -532.64],
-        #     [0, 1, 0, 162.5],
-        #     [0, 0, 1, -0.007],
-        #     [0, 0, 0, 1]
-        # ])
-        # X = np.array([              # for UWB in MHL
-        #     [1, 0, 0, 0],
-        #     [0, 1, 0, 3.57],
-        #     [0, 0, 1, 0],
-        #     [0, 0, 0, 1]
-        # ])
 
         for i in range(self.Nsim):
             xid_ref_rt = self.xid_ref.copy()
