@@ -87,7 +87,7 @@ class Param:
 
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
         
-        self.X_ref[:, 5] += 2   # offset in y direction, use when using vrx ground truth odometry
+        # self.X_ref[:, 5] += 2   # offset in y direction, use when using vrx ground truth odometry
 
 
 class Logger:
