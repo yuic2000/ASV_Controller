@@ -47,9 +47,11 @@ class Param:
         self.Q = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 1
         self.R = np.eye(2) * 1e-5
 
-        # initial states
+
+    def set_desired_posistion(self, x_init):
+        # self.q0_ref = x_init[0:4]
         self.q0_ref = np.array([1, 0, 0, 0])            # desired quaternion
-        self.p0_ref = np.array([0, 0, 0])               # desired position
+        self.p0_ref = x_init[4:7]
         self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
         self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
 
@@ -59,22 +61,26 @@ class Param:
         self.X_ref = self.x0_ref.reshape(1, -1)
         self.xi_ref = self.xid_ref.reshape(1, -1)
 
+        self.init_pose = np.eye(4)
+        # self.init_pose[:3, :3] = Rotation.from_quat(self.q0_ref).as_matrix()
+        self.init_pose[:3, 3] = self.p0_ref
+
 
     def get_ref_trajectory(self):   
         # X = np.eye(4)
+        X = self.init_pose.copy()
         # X = np.array([              # for vrx map frame
         #     [1, 0, 0, -532.64],
         #     [0, 1, 0, 162.5],
         #     [0, 0, 1, -0.007],
         #     [0, 0, 0, 1]
         # ])
-        X = np.array([              # for UWB in MHL
-            [1, 0, 0, 0],
-            [0, 1, 0, 3.57],
-            [0, 0, 1, 0],
-            [0, 0, 0, 1]
-        ])
-
+        # X = np.array([              # for UWB in MHL
+        #     [1, 0, 0, 0],
+        #     [0, 1, 0, 3.57],
+        #     [0, 0, 1, 0],
+        #     [0, 0, 0, 1]
+        # ])
 
         for i in range(self.Nsim):
             xid_ref_rt = self.xid_ref.copy()
@@ -93,7 +99,7 @@ class Param:
 
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
         
-        # self.X_ref[:, 5] += 2   # offset in y direction, use when using ground truth odometry
+        self.X_ref[:, 5] += 2   # offset in y direction, use when using vrx ground truth odometry
 
 
 class Logger:
