@@ -33,16 +33,16 @@ int main(int argc, char **argv) {
 
     // Get initial states from Ground-truth Odometry
     VectorXd x_init;
-    while (x_init.size() == 0) {
-        std::cout << "Waiting for ground truth odometry..." << std::endl;
-        rclcpp::spin_some(gtodom_sub);
+    // while (x_init.size() == 0) {
+    //     std::cout << "Waiting for ground truth odometry..." << std::endl;
+    //     rclcpp::spin_some(gtodom_sub);
 
-        x_init = gtodom_sub->get_x_wrld();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+    //     x_init = gtodom_sub->get_x_wrld();
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // }
 
     // // Set desired starting position
-    // x_init = VectorXd::Zero(13);            // when using boat model, start at (0, 0, 0)
+    x_init = VectorXd::Zero(13);            // when using boat model, start at (0, 0, 0)
     param.set_desired_init_position(x_init);
     // Get reference trajectory
     param.set_reference_trajectory();
@@ -52,15 +52,16 @@ int main(int argc, char **argv) {
     ///////////////////////////////////////////////////////////////////////////////////
     // setting initial states randomly
     // q0: randomly rotated -0.25*pi to 0.25*pi along z-axis
-    // Quaterniond q0(AngleAxisd(dis(gen), Vector3d::UnitZ()));    // x, y, z, w
-    // Vector3d p0 = Vector3d::Zero();
-    // p0.head<2>() += (Vector2d::Random() - Vector2d::Ones()) * 2;
-    // p0(1) += 1.5;
-    // Vector3d w0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;
-    // Vector3d v0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;;
-    // v0(0) = 0.5;
-    // VectorXd q0_vec(4);
-    // q0_vec << q0.coeffs();
+    Quaterniond q0(AngleAxisd(dis(gen), Vector3d::UnitZ()));    // x, y, z, w
+    Vector3d p0 = Vector3d::Zero();
+    p0.head<2>() += (Vector2d::Random() - Vector2d::Ones()) * 2;
+    p0(1) += 1.5;
+    Vector3d w0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;
+    Vector3d v0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;;
+    v0(0) = 0.5;
+    VectorXd q0_vec(4);
+    q0_vec << q0.coeffs();
+
     // setting initial states from python random values
     // Vector4d q0_vec;
     // q0_vec << 0.0, 0.0, -0.05024832, 0.99873676;    // x, y, z, w 
@@ -70,16 +71,17 @@ int main(int argc, char **argv) {
     // w0 << -0.0, -0.0, -0.0;
     // Vector3d v0;
     // v0 << 0.5, 0.0, -0.0;
+    
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
     // setting initial states from Ground-tryuth Odometry
     // rclcpp::spin_some(gtodom_sub);
     // VectorXd x_init = gtodom_sub->get_x_wrld();
     // std::cout << "x_init: " << x_wrld.size() << std::endl;
-    Vector4d q0_vec = x_init.segment(0, 4);
-    Vector3d p0 = x_init.segment(4, 3);
-    Vector3d w0 = x_init.segment(7, 3);
-    Vector3d v0 = x_init.segment(10, 3);
+    // Vector4d q0_vec = x_init.segment(0, 4);
+    // Vector3d p0 = x_init.segment(4, 3);
+    // Vector3d w0 = x_init.segment(7, 3);
+    // Vector3d v0 = x_init.segment(10, 3);
     
     ///////////////////////////////////////////////////////////////////////////////////
     Logger_eMPC = sim_mpc(q0_vec, p0, w0, v0, param, cmd_pub, gtodom_sub);
