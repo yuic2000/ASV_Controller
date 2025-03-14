@@ -30,12 +30,12 @@ Param::Param() {
     xmin = -xmax; 
 
     // // for otter simulation model control limits, used for vrx
-    umax = VectorXd::Constant(Nu, 115); 
-    umin = -VectorXd::Constant(Nu, 65);
+    // umax = VectorXd::Constant(Nu, 115); 
+    // umin = -VectorXd::Constant(Nu, 65);
 
     // // for blueboat model control limits, used for blueboat
-    // umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
-    // umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
+    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
+    umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
     // MPC cost matrices
