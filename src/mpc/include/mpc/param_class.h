@@ -22,8 +22,18 @@ public:
     VectorXd xmin;
     VectorXd umax;
     VectorXd umin;
+
+    // Initial states
+    Vector4d q0_ref;    // desired quaternion
+    Vector3d p0_ref;    // desired position
+    Vector3d w0_ref;    // desired yaw velocity
+    Vector3d v0_ref;    // desired surge velocity
+    // Reference trajectory setting
+    VectorXd x0_ref;
+    VectorXd xid_ref;
     MatrixXd X_ref;
     MatrixXd xi_ref;
+    Matrix4d init_pose;
 
     // Design cost function parameters
     VectorXd diag_values_cost;      // Diagonal values for the cost matrices for P, Q
@@ -34,6 +44,7 @@ public:
     // Constructor
     Param();
 
+    void set_desired_init_position(VectorXd& x_init);
     void set_reference_trajectory();
 
 };

@@ -10,4 +10,4 @@
 namespace plt = matplotlibcpp;
 using namespace Eigen;
 
-void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param);
+void plot_mpc(const Logger& logger, const Param& param);
