@@ -72,12 +72,12 @@ void plot_mpc(const Logger& logger, const Param& param) {
         y[i] = (logger.X(5, i));
     }
 
-    plt::plot(x, y, "r-.", {{"linewidth", "2"}, {"label", "MPC"}});
+    plt::plot(x, y, "r-.", {{"linewidth", "3"}, {"label", "MPC"}});
 
     // Reference trajectory
-    std::vector<double> x_ref(X_ref.col(4).data()+1, X_ref.col(4).data() + (Nsim - Nt + 1));
-    std::vector<double> y_ref(X_ref.col(5).data()+1, X_ref.col(5).data() + (Nsim - Nt + 1));
-    plt::plot(x_ref, y_ref, "k-", {{"linewidth", "3"}, {"label", "Reference"}});
+    std::vector<double> x_ref(X_ref.col(4).data(), X_ref.col(4).data() + (Nsim - Nt + 1));
+    std::vector<double> y_ref(X_ref.col(5).data(), X_ref.col(5).data() + (Nsim - Nt + 1));
+    plt::plot(x_ref, y_ref, "k-", {{"linewidth", "2"}, {"label", "Reference"}});
 
     plt::axis("equal");
     plt::grid(true);

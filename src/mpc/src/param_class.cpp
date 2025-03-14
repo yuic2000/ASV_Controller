@@ -37,13 +37,13 @@ Param::Param() {
     xmax = VectorXd::Constant(Nx, numeric_limits<double>::infinity()); 
     xmin = -xmax; 
 
-    // for otter simulation model control limits
-    umax = VectorXd::Constant(Nu, 115); 
-    umin = -VectorXd::Constant(Nu, 65);
+    // for otter simulation model control limits, used for vrx
+    // umax = VectorXd::Constant(Nu, 115); 
+    // umin = -VectorXd::Constant(Nu, 65);
 
-    // for blueboat model control limits
-    // umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
-    // umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
+    // for blueboat model control limits, used for blueboat
+    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
+    umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
     // MPC cost matrices
@@ -58,27 +58,32 @@ Param::Param() {
     R = MatrixXd::Identity(2, 2) * 1e-5;
 }
 
-// Param class member function
-void Param::set_reference_trajectory() {
-    Vector4d q0_ref(1, 0, 0, 0);    // desired quaternion
-    // Vector3d p0_ref(0, 0, 0);       // desired position
-    Vector3d p0_ref(-532.64, 162.5, 0);       // desired position
-    Vector3d w0_ref(0, 0, 0.1);     // desired yaw velocity, 0.1 rad/s
-    Vector3d v0_ref(0.5, 0, 0);     // desired surge velocity, 0.5 m/s
-    VectorXd x0_ref(7);
-    x0_ref << q0_ref, p0_ref;
-    VectorXd xid_ref(6);
-    xid_ref << w0_ref, v0_ref;
+void Param::set_desired_init_position(VectorXd& x_init) {
+    this->q0_ref << 1, 0, 0, 0;                 // desired quaternion
+    // this->p0_ref << 0, 0, 0;                 // desired position
+    this->p0_ref << x_init.segment<3>(4);       // desired position
+    this->w0_ref << 0, 0, 0.1;                  // desired yaw velocity, 0.1 rad/s
+    this->v0_ref << 0.5, 0, 0;                  // desired surge velocity, 0.5 m/s
 
-    Matrix4d X = Matrix4d::Identity();
-    X.block<3, 1>(0, 3) = p0_ref;
+    this->x0_ref = VectorXd(7);
+    this->x0_ref << this->q0_ref, this->p0_ref;
+    this->xid_ref = VectorXd(6);
+    this->xid_ref << this->w0_ref, this->v0_ref;
+
+    this->init_pose = Matrix4d::Identity();
+    this->init_pose.block<3, 1>(0, 3) = this->p0_ref;
+}
+
+void Param::set_reference_trajectory() {
+    Matrix4d X = this->init_pose;
+
     MatrixXd X_ref(1, 7);
-    X_ref.row(0) = x0_ref.transpose();
+    X_ref.row(0) = this->x0_ref.transpose();
     MatrixXd xi_ref(1, 6);
-    xi_ref.row(0) = xid_ref.transpose();
+    xi_ref.row(0) = this->xid_ref.transpose();
 
     for (int i = 0; i < Nsim; ++i) {
-        VectorXd xid_ref_rt = xid_ref;
+        VectorXd xid_ref_rt = this->xid_ref;
 
         if (mode == 1) {
             xid_ref_rt(2) = 0.1 * cos(i / 100.0);

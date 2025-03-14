@@ -54,9 +54,9 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
         rclcpp::spin_some(gtodom_sub);
         VectorXd x_wrld = gtodom_sub->get_x_wrld();
         // std::cout << "x_gtOdom: " << x_wrld.transpose() << std::endl;
-        std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
+        // std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
         x0 = x_wrld;
-        std::cout << "x0: " << x0.transpose() << std::endl;
+        // std::cout << "x0: " << x0.transpose() << std::endl;
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
 

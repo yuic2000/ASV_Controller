@@ -23,13 +23,11 @@ int main(int argc, char **argv) {
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
 
-    param.set_reference_trajectory();
-
+    // Initialize MPC node
     rclcpp::init(argc, argv);
     
     // Subscribe to ground truth odometry
     auto gtodom_sub = std::make_shared<GtOdomSubscriberNode>();
-
     // Publish thrust commands
     auto cmd_pub = std::make_shared<MPCCmdPublishNode>();
 
@@ -42,6 +40,13 @@ int main(int argc, char **argv) {
         x_init = gtodom_sub->get_x_wrld();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    // // Set desired starting position
+    // x_init = VectorXd::Zero(13);            // when using boat model, start at (0, 0, 0)
+    param.set_desired_init_position(x_init);
+    // Get reference trajectory
+    param.set_reference_trajectory();
+
 
     Logger Logger_eMPC(Nsim, Nt);
     ///////////////////////////////////////////////////////////////////////////////////
