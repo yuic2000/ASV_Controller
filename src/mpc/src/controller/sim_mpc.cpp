@@ -50,13 +50,13 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
         ////////////////////      Use Ground-truth Odometry to update next step       ////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        // auto listener_start = std::chrono::high_resolution_clock::now();
-        // rclcpp::spin_some(gtodom_sub);
-        // VectorXd x_wrld = gtodom_sub->get_x_wrld();
-        // // std::cout << "x_gtOdom: " << x_wrld.transpose() << std::endl;
-        // std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
-        // x0 = x_wrld;
-        // std::cout << "x0: " << x0.transpose() << std::endl;
+        auto listener_start = std::chrono::high_resolution_clock::now();
+        rclcpp::spin_some(gtodom_sub);
+        VectorXd x_wrld = gtodom_sub->get_x_wrld();
+        // std::cout << "x_gtOdom: " << x_wrld.transpose() << std::endl;
+        std::cout << "listener: " << std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - listener_start).count() << " seconds" << std::endl;
+        x0 = x_wrld;
+        std::cout << "x0: " << x0.transpose() << std::endl;
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,30 +65,30 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
         ////////////////////      Use Simulation model to update next step            ////////////////////
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        // Update x_blue four times for simulation frequency, 4*dt
-        Quaterniond quat(x0(3), x0(0), x0(1), x0(2));   // w, x, y, z
-        VectorXd euler_angles = EulerAngles<double, EulerSystemZYX>(quat.normalized().toRotationMatrix()).angles();
+        // // Update x_blue four times for simulation frequency, 4*dt
+        // Quaterniond quat(x0(3), x0(0), x0(1), x0(2));   // w, x, y, z
+        // VectorXd euler_angles = EulerAngles<double, EulerSystemZYX>(quat.normalized().toRotationMatrix()).angles();
 
-        VectorXd x_blue(12);
-        x_blue << x0.segment(10, 3), x0.segment(7, 3), x0.segment(4, 3), euler_angles.reverse();
+        // VectorXd x_blue(12);
+        // x_blue << x0.segment(10, 3), x0.segment(7, 3), x0.segment(4, 3), euler_angles.reverse();
 
-        // Update blue_boat four times for simulation frequency, 4/dt
-        for (int j = 0; j < 4; ++j) {
-            x_blue += blue_boat(x_blue, u, V_c, beta_c) * dt / 4;
-        }
+        // // Update blue_boat four times for simulation frequency, 4/dt
+        // for (int j = 0; j < 4; ++j) {
+        //     x_blue += blue_boat(x_blue, u, V_c, beta_c) * dt / 4;
+        // }
 
-        // Convert Euler angles to quaternion
-        euler_angles = x_blue.segment(9, 3);
-        Matrix3d euler_matrix;
-        euler_matrix = AngleAxisd(euler_angles[2], Vector3d::UnitZ()) *
-                AngleAxisd(euler_angles[1], Vector3d::UnitY()) *
-                AngleAxisd(euler_angles[0], Vector3d::UnitX());
+        // // Convert Euler angles to quaternion
+        // euler_angles = x_blue.segment(9, 3);
+        // Matrix3d euler_matrix;
+        // euler_matrix = AngleAxisd(euler_angles[2], Vector3d::UnitZ()) *
+        //         AngleAxisd(euler_angles[1], Vector3d::UnitY()) *
+        //         AngleAxisd(euler_angles[0], Vector3d::UnitX());
         
-        Quaterniond quat_euler(euler_matrix);
-        Vector4d quat_vec = quat_euler.coeffs();
+        // Quaterniond quat_euler(euler_matrix);
+        // Vector4d quat_vec = quat_euler.coeffs();
 
-        // Update x0 for the next iteration
-        x0 << quat_vec, x_blue.segment(6, 3), x_blue.segment(3, 3), x_blue.segment(0, 3);
+        // // Update x0 for the next iteration
+        // x0 << quat_vec, x_blue.segment(6, 3), x_blue.segment(3, 3), x_blue.segment(0, 3);
         //////////////////////////////////////////////////////////////////////////////////////////////////
 
 

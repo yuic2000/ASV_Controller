@@ -8,7 +8,8 @@ GtOdomSubscriberNode::GtOdomSubscriberNode() : Node("ground_truth_odometry_subsc
     RCLCPP_INFO(this->get_logger(), "Subscribe to odometry topic: %s", odom_topic.c_str());
     // RCLCPP_INFO(this->get_logger(), "Ground truth odometry subscriber node created");
 
-    translation_odom_src_to_wrld << -532.64, 162.5, -0.07;
+    // translation_odom_src_to_wrld << -532.64, 162.5, -0.07;
+    translation_odom_src_to_wrld << 0, 0, 0;
     quat_odom_src_to_rot_wrld = Eigen::Quaterniond(1, 0, 0, 0);    // quaternion, w, x, y, z
 
     odom_pos_src2wrld.block<3, 3>(0, 0) = quat_odom_src_to_rot_wrld.toRotationMatrix();
@@ -31,7 +32,7 @@ void GtOdomSubscriberNode::odom_callback(const nav_msgs::msg::Odometry::SharedPt
 
     // Map frame
     Eigen::Matrix4d odomsrc_coord;
-    odomsrc_coord.block<3, 3>(0, 0) = q_odom.toRotationMatrix();
+    odomsrc_coord.block<3, 3>(0, 0) = q_odom.normalized().toRotationMatrix();
     odomsrc_coord.block<3, 1>(0, 3) = p_odom;
     odomsrc_coord.block<1, 3>(3, 0) = Eigen::RowVector3d::Zero();
     odomsrc_coord(3, 3) = 1.0;

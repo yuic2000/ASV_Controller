@@ -2,7 +2,8 @@
 
 namespace plt = matplotlibcpp;
 
-void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
+void plot_mpc(const Logger& logger, const Param& param) {
+// void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     const double dt = param.dt;
     const int Nt = param.Nt;
     const int Nsim = param.Nsim;
@@ -11,23 +12,24 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     std::vector<double> x_lim = {0, 60};
     int axis_font_size = 12;
 
+    //////////////////////////////////////////////////////////////////////////////////////
     // Error plots
+    //////////////////////////////////////////////////////////////////////////////////////
     plt::figure_size(1200, 500);
     plt::subplot(1, 2, 1);
     
-    for (const auto& logger : Logger_list) {
-        std::vector<double> t(logger.Err2.cols());
-        for (uint i = 0; i < t.size(); ++i) {
-            t[i] = i * dt;
-        }
-
-        // Orientation error
-        std::vector<double> orientation_error(logger.Err2.cols());
-        for (uint i = 0; i < logger.Err2.cols(); ++i) {
-            orientation_error[i] = (logger.Err2(0, i));
-        }
-        plt::plot(t, orientation_error, {{"linewidth", "0.5"}});
+    // Timestamp
+    std::vector<double> t(logger.Err2.cols());
+    for (uint i = 0; i < t.size(); ++i) {
+        t[i] = i * dt;
     }
+
+    // Orientation error
+    std::vector<double> orientation_error(logger.Err2.cols());
+    for (uint i = 0; i < logger.Err2.cols(); ++i) {
+        orientation_error[i] = (logger.Err2(0, i));
+    }
+    plt::plot(t, orientation_error, {{"linewidth", "0.5"}});
 
     // Orientation error plot settings
     plt::title("MPC - Orientation error", {{"fontsize", std::to_string(axis_font_size)}});
@@ -37,20 +39,13 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     plt::xlabel("Time (s)");
 
     plt::subplot(1, 2, 2);
-    
-    for (const auto& logger : Logger_list) {
-        std::vector<double> t(logger.Err2.cols());
-        for (size_t i = 0; i < t.size(); ++i) {
-            t[i] = i * dt;
-        }
 
-        // Position error
-        std::vector<double> pos_error(logger.Err2.cols());
-        for (uint i = 0; i < logger.Err2.cols(); ++i) {
-            pos_error[i] = std::sqrt(std::pow(logger.Err2(1, i), 2) + std::pow(logger.Err2(2, i), 2) + std::pow(logger.Err2(3, i), 2));
-        }
-        plt::plot(t, pos_error, {{"linewidth", "0.5"}});
+    // Position error
+    std::vector<double> pos_error(logger.Err2.cols());
+    for (uint i = 0; i < logger.Err2.cols(); ++i) {
+        pos_error[i] = std::sqrt(std::pow(logger.Err2(1, i), 2) + std::pow(logger.Err2(2, i), 2) + std::pow(logger.Err2(3, i), 2));
     }
+    plt::plot(t, pos_error, {{"linewidth", "0.5"}});
 
     // Position error plot settings
     plt::title("MPC - Position error", {{"fontsize", std::to_string(axis_font_size)}});
@@ -60,13 +55,17 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     plt::xlabel("Time (s)");
 
     plt::tight_layout();
+    //////////////////////////////////////////////////////////////////////////////////////
+    // End of error plots
+    //////////////////////////////////////////////////////////////////////////////////////
 
+
+    //////////////////////////////////////////////////////////////////////////////////////
     // Trajectory plot
+    //////////////////////////////////////////////////////////////////////////////////////
     plt::figure_size(1000, 800);
     
-    // Plot the last trajectory result
-    const auto& logger = Logger_list.back();
-            // Orientation error
+    // Real trajectory
     std::vector<double> x(logger.Err2.cols());
     std::vector<double> y(logger.Err2.cols());
     for (int i = 0; i < logger.Err2.cols(); ++i) {
@@ -76,9 +75,9 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
 
     plt::plot(x, y, "r-.", {{"linewidth", "2"}, {"label", "MPC"}});
 
-    // Plot reference trajectory
-    std::vector<double> x_ref(X_ref.col(4).data(), X_ref.col(4).data() + (Nsim - Nt + 1));
-    std::vector<double> y_ref(X_ref.col(5).data(), X_ref.col(5).data() + (Nsim - Nt + 1));
+    // Reference trajectory
+    std::vector<double> x_ref(X_ref.col(4).data()+1, X_ref.col(4).data() + (Nsim - Nt + 1));
+    std::vector<double> y_ref(X_ref.col(5).data()+1, X_ref.col(5).data() + (Nsim - Nt + 1));
     plt::plot(x_ref, y_ref, "k-", {{"linewidth", "3"}, {"label", "Reference"}});
 
     plt::axis("equal");
@@ -87,10 +86,12 @@ void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     plt::xlabel("x");
     plt::ylabel("y");
 
-    // Print simulation time
-    for (size_t idx = 0; idx < Logger_list.size(); ++idx) {
-        std::cout << (idx + 1) << " simulation: " << Logger_list[idx].taken_time << " sec" << std::endl;
-    }
+    //////////////////////////////////////////////////////////////////////////////////////
+    // End of trajectory plot
+    //////////////////////////////////////////////////////////////////////////////////////
+
+
+    std::cout << " simulation: " << logger.taken_time << " sec" << std::endl;
 
     plt::show();
     plt::close();

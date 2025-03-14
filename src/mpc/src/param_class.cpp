@@ -38,12 +38,12 @@ Param::Param() {
     xmin = -xmax; 
 
     // for otter simulation model control limits
-    // umax = VectorXd::Constant(Nu, 115); 
-    // umin = -VectorXd::Constant(Nu, 65);
+    umax = VectorXd::Constant(Nu, 115); 
+    umin = -VectorXd::Constant(Nu, 65);
 
     // for blueboat model control limits
-    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
-    umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
+    // umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
+    // umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
     // MPC cost matrices
@@ -61,7 +61,8 @@ Param::Param() {
 // Param class member function
 void Param::set_reference_trajectory() {
     Vector4d q0_ref(1, 0, 0, 0);    // desired quaternion
-    Vector3d p0_ref(0, 0, 0);       // desired position
+    // Vector3d p0_ref(0, 0, 0);       // desired position
+    Vector3d p0_ref(-532.64, 162.5, 0);       // desired position
     Vector3d w0_ref(0, 0, 0.1);     // desired yaw velocity, 0.1 rad/s
     Vector3d v0_ref(0.5, 0, 0);     // desired surge velocity, 0.5 m/s
     VectorXd x0_ref(7);
@@ -70,6 +71,7 @@ void Param::set_reference_trajectory() {
     xid_ref << w0_ref, v0_ref;
 
     Matrix4d X = Matrix4d::Identity();
+    X.block<3, 1>(0, 3) = p0_ref;
     MatrixXd X_ref(1, 7);
     X_ref.row(0) = x0_ref.transpose();
     MatrixXd xi_ref(1, 6);
