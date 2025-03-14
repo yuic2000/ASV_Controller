@@ -3,7 +3,6 @@
 namespace plt = matplotlibcpp;
 
 void plot_mpc(const Logger& logger, const Param& param) {
-// void plot_mpc(const std::vector<Logger>& Logger_list, const Param& param) {
     const double dt = param.dt;
     const int Nt = param.Nt;
     const int Nsim = param.Nsim;
