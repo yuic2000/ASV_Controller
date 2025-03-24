@@ -15,7 +15,7 @@ class GtOdomSubscriberNode(Node):
         self.get_logger().info(f"Subscribe to odometry topic: {self.odom_topic}")
         
         self.translation_odom_src_to_wrld = np.array([-532.64, 162.5, -0.07])  # for output.bag
-        self.rotation_odom_src_to_wrld = np.array([0, 0, 0, 1])     # x: 0, y: 0, z: 0
+        self.rotation_odom_src_to_wrld = np.array([0, 0, 0, 1])     # x, y, z, w / x: 0, y: 0, z: 0
         # self.rotation_odom_src_to_wrld = np.array([0, 0, 1/(2**0.5), 1/(2**0.5)])     # x: 0, y: 0, z: pi/2
         # self.rotation_odom_src_to_wrld = np.array([1, 0, 0, 0])   # x: pi, y: 0, z: 0
 
