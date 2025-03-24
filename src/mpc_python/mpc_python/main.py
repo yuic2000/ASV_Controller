@@ -31,8 +31,13 @@ def main(args=None):
 
     x_init = np.zeros(13)                # Initialize x_init with zeros, if using boat model
     param.set_desired_posistion(x_init)  # Set desired position
+    # param.get_ref_trajectory()           # Get reference trajectory for zigzag or circling by twists
 
-    param.get_ref_trajectory()           # Get reference trajectory
+    if param.mode == 1:                   # mode 1: zigzag, mode 2: circling
+        param.generate_zigzag_waypoints()     # zigzag, directly set zigzag waypoints
+    elif param.mode == 2: 
+        param.generate_circle_waypoints()   # circling, directly set circle waypoints
+    param.waypoints2twists()              # convert waypoints to referenced twists
 
     # Run simulation
     Logger_eMPC = Logger(param.Nsim, param.Nt)
@@ -40,9 +45,9 @@ def main(args=None):
     #####################################################################################
     # Setting initial states, for using boat model
     #####################################################################################
-    q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()
+    q0 = Rotation.from_euler('xyz', [0, 0, (np.random.rand()-0.5)*0.5*np.pi]).as_quat()     # x, y, z, w
     p0 = np.zeros(3)
-    p0[:2] += (np.random.rand(2)-1) * 2
+    p0[:2] += (np.random.rand(2)-1) * 1.0
     p0[1] += 1.5
     w0 = (np.random.rand(3) - 0.5) * 0
     v0 = (np.random.rand(3) - 0.5) * 0

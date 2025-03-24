@@ -1,5 +1,5 @@
 import numpy as np
-from mpc_python.src.utils.LieGroup import skew
+from mpc_python.src.utils.LieGroup import skew, pose_to_T_matrix
 from scipy.linalg import expm, logm
 from scipy.spatial.transform import Rotation
 
@@ -50,7 +50,7 @@ class Param:
 
     def set_desired_posistion(self, x_init):
         # self.q0_ref = x_init[0:4]
-        self.q0_ref = np.array([1, 0, 0, 0])            # desired quaternion
+        self.q0_ref = np.array([0, 0, 0, 1])            # desired quaternion: x, y, z, w
         self.p0_ref = x_init[4:7]
         self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
         self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
@@ -81,7 +81,7 @@ class Param:
             Xi[:3, 3] = xid_ref_rt[3:]
             
             X = X @ expm(Xi * self.dt)
-            new_quat = Rotation.from_matrix(X[:3, :3]).as_quat()
+            new_quat = Rotation.from_matrix(X[:3, :3]).as_quat()        # x, y, z, w
 
             self.X_ref = np.vstack([self.X_ref, np.concatenate([new_quat, X[:3, 3]])])
 
@@ -90,9 +90,69 @@ class Param:
         # self.X_ref[:, 5] += 2   # offset in y direction, use when using vrx ground truth odometry
 
 
+    def generate_zigzag_waypoints(self, amplitude=1.0, wavelength=10.0):
+        segment_steps = self.Nsim  # Number of waypoints
+        
+        x_vals = np.linspace(0, 3 * wavelength, segment_steps)  # X-axis progression
+        y_vals = amplitude * np.sin((2 * np.pi / wavelength) * x_vals)  # Sinusoidal y
+
+        for i in range(segment_steps):
+            x = x_vals[i]
+            y = y_vals[i]
+
+            # Compute yaw angle as tangent to the sine curve
+            theta = np.arctan2(
+                (2 * np.pi / wavelength) * amplitude * np.cos((2 * np.pi / wavelength) * x),
+                1
+            )
+
+            # Convert yaw to quaternion (x, y, z, w)
+            quaternion = Rotation.from_euler('xyz', [0, 0, theta]).as_quat()
+
+            # Store waypoint
+            self.X_ref = np.vstack([self.X_ref, np.concatenate([quaternion, [x, y, 0]])])
+    
+    def generate_circle_waypoints(self):
+        radius = 5.0  
+        center = np.array([0, 5])  # Center at (0,5)
+        num_waypoints = self.Nsim  # Number of waypoints
+        
+        angles = np.linspace(-np.pi/2, 3*np.pi/2, num_waypoints)  # Counterclockwise from (0,0)
+        
+        waypoints = []
+        for theta in angles:
+            x = center[0] + radius * np.cos(theta)
+            y = center[1] + radius * np.sin(theta)
+
+            yaw_angle = theta + np.pi/2  # Align tangent direction
+            quaternion = Rotation.from_euler('xyz', [0, 0, yaw_angle]).as_quat()  # Convert to quaternion (x, y, z, w)
+
+            self.X_ref = np.vstack([self.X_ref, np.concatenate([quaternion, [x, y, 0]])])
+
+    def waypoints2twists(self):
+        waypoints = self.X_ref
+        # Generate twist based on waypoints
+        for k in range(waypoints.shape[0] - 1):
+            # Get the current and next waypoint
+            X1 = pose_to_T_matrix(waypoints[k, :])  # Transformation of waypoint k
+            X2 = pose_to_T_matrix(waypoints[k + 1, :])  # Transformation of waypoint k+1
+    
+            # Compute the relative transformation
+            delta_X = np.linalg.inv(X1) @ X2
+    
+            # Compute the twist using logm (logarithm map of the relative transformation)
+            twist_matrix = logm(delta_X) / self.dt  # Divide by dt to get the twist
+    
+            # Extract the linear and angular velocities from the twist matrix
+            omega = np.array((twist_matrix[2, 1], twist_matrix[0, 2], twist_matrix[1, 0]))  # Angular velocity (from skew-symmetric part of matrix)
+            v = twist_matrix[:3, 3]  # Linear velocity (from translational part)
+
+            self.xi_ref = np.vstack([self.xi_ref, np.concatenate([omega, v])])
+
+
 class Logger:
     def __init__(self, Nsim, Nt):
-        self.X = np.zeros((13, Nsim - Nt))
+        self.X = np.zeros((13, Nsim - Nt + 1))    # +1 for initial state
         self.Err = np.zeros((6, Nsim - Nt))
         self.U = np.zeros((2, Nsim - Nt))
         self.Err2 = np.zeros((4, Nsim - Nt))
