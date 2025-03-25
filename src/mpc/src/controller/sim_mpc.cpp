@@ -85,7 +85,7 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
                 AngleAxisd(euler_angles[0], Vector3d::UnitX());
         
         Quaterniond quat_euler(euler_matrix);
-        Vector4d quat_vec = quat_euler.coeffs();
+        Vector4d quat_vec = quat_euler.coeffs();        // x, y, z, w
 
         // Update x0 for the next iteration
         x0 << quat_vec, x_blue.segment(6, 3), x_blue.segment(3, 3), x_blue.segment(0, 3);
@@ -94,15 +94,15 @@ Logger sim_mpc(const VectorXd& q0, const VectorXd& p0, const VectorXd& w0, const
 
         // Compute Xd and X0
         Matrix4d Xd = Matrix4d::Identity();
-        Vector4d seg_ref = X_ref_rt.segment(0, 4);
-        Quaterniond q_ref(seg_ref);         // w, x, y, z
+        Vector4d seg_ref = X_ref_rt.segment(0, 4);      // x, y, z, w
+        Quaterniond q_ref(seg_ref);                     // w, x, y, z
         q_ref.normalize();
         Xd.block<3, 3>(0, 0) = q_ref.toRotationMatrix();
         Xd.block<3, 1>(0, 3) = X_ref_rt.segment(4, 3);
 
         Matrix4d X0 = Matrix4d::Identity();
-        Vector4d seg_x0 = x0.segment(0, 4);
-        Quaterniond q_x0(seg_x0);           // w, x, y, z
+        Vector4d seg_x0 = x0.segment(0, 4);             // x, y, z, w
+        Quaterniond q_x0(seg_x0);                       // w, x, y, z
         q_x0.normalize();
         X0.block<3, 3>(0, 0) = q_x0.toRotationMatrix();
         X0.block<3, 1>(0, 3) = x0.segment(4, 3);
