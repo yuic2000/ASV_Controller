@@ -46,6 +46,9 @@ public:
 
     void set_desired_init_position(VectorXd& x_init);
     void set_reference_trajectory();
+    void generate_zigzag_waypoints();
+    void generate_circle_waypoints();
+    void waypoints2twists();
 
 };
 class Logger {

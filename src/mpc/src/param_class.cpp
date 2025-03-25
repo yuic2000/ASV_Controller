@@ -1,4 +1,5 @@
 #include "../include/mpc/param_class.h"
+#include <iostream>
 
 using namespace Eigen;
 using namespace std;
@@ -9,8 +10,8 @@ Param::Param() {
     dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 125;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    Nt = 100;                       // MPC planning time, 4 sec
+    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -59,7 +60,7 @@ Param::Param() {
 }
 
 void Param::set_desired_init_position(VectorXd& x_init) {
-    this->q0_ref << 1, 0, 0, 0;                 // desired quaternion
+    this->q0_ref << 0, 0, 0, 1;                 // desired quaternion, x, y, z, w
     // this->p0_ref << 0, 0, 0;                 // desired position
     this->p0_ref << x_init.segment<3>(4);       // desired position
     this->w0_ref << 0, 0, 0.1;                  // desired yaw velocity, 0.1 rad/s
@@ -96,7 +97,7 @@ void Param::set_reference_trajectory() {
         X = X * (Xi * dt).exp();
         Quaterniond new_quat(X.block<3, 3>(0, 0));
         VectorXd new_state(7);
-        new_state << new_quat.coeffs(), X.block<3, 1>(0, 3);
+        new_state << new_quat.coeffs(), X.block<3, 1>(0, 3);    // qx, qy, qz, qw, x, y, z
         X_ref.conservativeResize(X_ref.rows() + 1, NoChange);
         X_ref.row(X_ref.rows() - 1) = new_state.transpose();
         xi_ref.conservativeResize(xi_ref.rows() + 1, NoChange);
@@ -104,6 +105,98 @@ void Param::set_reference_trajectory() {
     }
 
     this->X_ref = X_ref;
+    this->xi_ref = xi_ref;
+}
+
+void Param::generate_zigzag_waypoints() {
+    double amplitude = 1.0;
+    double wavelength = 10.0;
+    int segment_steps = Nsim;  // Number of waypoints
+
+    MatrixXd X_ref(1, 7);
+    X_ref.row(0) = this->x0_ref.transpose();
+
+    VectorXd x_vals = VectorXd::LinSpaced(segment_steps, 0, 3 * wavelength);  // X-axis progression
+    VectorXd y_vals = amplitude * (2 * M_PI / wavelength * x_vals).array().sin();  // Sinusoidal y
+
+    for (int i = 0; i < segment_steps; ++i) {
+        double x = x_vals[i];
+        double y = y_vals[i];
+
+        // Compute yaw angle as tangent to the sine curve
+        double theta = atan2(
+            (2 * M_PI / wavelength) * amplitude * cos((2 * M_PI / wavelength) * x),
+            1
+        );
+
+        Quaterniond quaternion(AngleAxisd(theta, Vector3d::UnitZ()));   // quat: w, x, y, z
+
+        // Store waypoint
+        VectorXd waypoint(7);
+        waypoint << quaternion.coeffs(), x, y, 0;                       // qx, qy, qz, qw, x, y, z
+        X_ref.conservativeResize(X_ref.rows() + 1, NoChange);
+        X_ref.row(X_ref.rows() - 1) = waypoint.transpose();
+    }
+
+    this->X_ref = X_ref;
+}
+
+void Param::generate_circle_waypoints() {
+    double radius = 5.0;
+    Vector2d center(0, 5);  // Center at (0,5)
+    int num_waypoints = Nsim;  // Number of waypoints
+
+    MatrixXd X_ref(1, 7);
+    X_ref.row(0) = this->x0_ref.transpose();
+
+    VectorXd angles = VectorXd::LinSpaced(num_waypoints, -M_PI / 2, 3 * M_PI / 2);  // Counterclockwise from (0,0)
+
+    for (int i = 0; i < num_waypoints; ++i) {
+        double theta = angles[i];
+        double x = center[0] + radius * cos(theta);
+        double y = center[1] + radius * sin(theta);
+
+        double yaw_angle = theta + M_PI / 2;  // Align tangent direction
+        Quaterniond quaternion(AngleAxisd(yaw_angle, Vector3d::UnitZ()));  // quat: w, x, y, z
+
+        VectorXd waypoint(7);
+        waypoint << quaternion.coeffs(), x, y, 0;                          // qx, qy, qz, qw, x, y, z
+
+        X_ref.conservativeResize(X_ref.rows() + 1, NoChange);
+        X_ref.row(X_ref.rows() - 1) = waypoint.transpose();
+    }
+
+    this->X_ref = X_ref;
+}
+
+void Param::waypoints2twists() {
+    MatrixXd waypoints = this->X_ref;
+
+    MatrixXd xi_ref(1, 6);
+    xi_ref.row(0) = this->xid_ref.transpose();
+
+    // Generate twist based on waypoints
+    for (int k = 0; k < waypoints.rows() - 1; ++k) {
+        // Get the current and next waypoint
+        Matrix4d X1 = pose_to_T_matrix(waypoints.row(k));  // Transformation of waypoint k
+        Matrix4d X2 = pose_to_T_matrix(waypoints.row(k + 1));  // Transformation of waypoint k+1
+
+        // Compute the relative transformation
+        Matrix4d delta_X = X1.inverse() * X2;
+
+        // Compute the twist using logm (logarithm map of the relative transformation)
+        Matrix4d twist_matrix = delta_X.log() / dt;  // Divide by dt to get the twist
+
+        // Extract the linear and angular velocities from the twist matrix
+        Vector3d omega(twist_matrix(2, 1), twist_matrix(0, 2), twist_matrix(1, 0));  // Angular velocity (from skew-symmetric part of matrix)
+        Vector3d v = twist_matrix.block<3, 1>(0, 3);  // Linear velocity (from translational part)
+
+        VectorXd twist(6);
+        twist << omega, v;
+        xi_ref.conservativeResize(xi_ref.rows() + 1, NoChange);
+        xi_ref.row(xi_ref.rows() - 1) = twist.transpose();
+    }
+
     this->xi_ref = xi_ref;
 }
 

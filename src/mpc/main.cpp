@@ -44,8 +44,15 @@ int main(int argc, char **argv) {
     // // Set desired starting position
     x_init = VectorXd::Zero(13);            // when using boat model, start at (0, 0, 0)
     param.set_desired_init_position(x_init);
-    // Get reference trajectory
-    param.set_reference_trajectory();
+
+    // param.set_reference_trajectory();       // set reference trajectory from twist
+
+    if (param.mode == 1) {                   // mode 1: zigzag, mode 2: circling
+        param.generate_zigzag_waypoints();     // zigzag, directly set zigzag waypoints
+    } else if (param.mode == 2) { 
+        param.generate_circle_waypoints();   // circling, directly set circle waypoints
+    }
+    param.waypoints2twists();              // convert waypoints to referenced twists
 
 
     Logger Logger_eMPC(Nsim, Nt);
