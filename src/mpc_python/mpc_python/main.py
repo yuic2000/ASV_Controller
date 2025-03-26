@@ -3,7 +3,7 @@ import pickle
 
 from mpc_python.sim_mpc import sim_mpc
 from mpc_python.src.param import *
-from mpc_python.src.plot import plot_mpc
+from mpc_python.src.plot import *
 
 import rclpy
 from mpc_python.communication.mpc_cmd_pub import *
@@ -15,6 +15,8 @@ def main(args=None):
     np.random.seed(2)
     Ns = 1
     param = Param()             # Initialize parameters in param.py
+
+    waypoint_by_twist = False   # True: set waypoints by twists, False: set waypoints by positions
 
 
     # Initialize MPC node
@@ -35,8 +37,17 @@ def main(args=None):
     x_init = gtOdom_sub.get_x_wrld()
 
     param.set_desired_posistion(x_init)  # Set desired position
-
-    param.get_ref_trajectory()           # Get reference trajectory
+    if waypoint_by_twist:
+        print('Generating waypoints by twists')
+        param.get_ref_trajectory()           # Get reference trajectory for zigzag or circling by twists
+    
+    else:
+        print('Generating waypoints by positions')
+        if param.mode == 1:                     # mode 1: zigzag, mode 2: circling
+            param.generate_zigzag_waypoints()   # zigzag, directly set zigzag waypoints
+        elif param.mode == 2: 
+            param.generate_circle_waypoints()   # circling, directly set circle waypoints
+        param.waypoints2twists()                # convert waypoints to referenced twists
 
 
     # Run simulation
