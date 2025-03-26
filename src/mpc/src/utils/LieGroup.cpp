@@ -1,10 +1,26 @@
 #include "../../include/mpc/utils/LieGroup.h"
 
 // Convert quaternion to rotation matrix
-Matrix3d quat2rotm(const Vector4d& quat) {
-    Quaterniond q(quat);        // w, x, y, z
+Matrix3d quat2rotm(const Vector4d& quat) {      // quat: x, y, z, w
+    Quaterniond q(quat);                        // w, x, y, z
     q.normalize();
     return q.toRotationMatrix();
+}
+
+Matrix4d pose_to_T_matrix(const VectorXd& waypoint) {
+    // Converts a waypoint [qx, qy, qz, qw, x, y, z] to a 4x4 transformation matrix
+    Vector4d quaternion = waypoint.segment<4>(0);  // x, y, z, w
+    Vector3d position = waypoint.segment<3>(4);
+
+    // Create rotation matrix from quaternion
+    Matrix3d R = quat2rotm(quaternion);
+
+    // Create transformation matrix
+    Matrix4d T = Matrix4d::Identity();
+    T.block<3, 3>(0, 0) = R;
+    T.block<3, 1>(0, 3) = position;
+
+    return T;
 }
 
 Matrix3d skew(const Vector3d& w) {
