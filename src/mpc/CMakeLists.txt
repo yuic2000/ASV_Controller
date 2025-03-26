@@ -56,6 +56,7 @@ add_library(mpc_lib
 add_library(mpc_communication
     ${PROJECT_SOURCE_DIR}/src/communication/mpc_cmd_pub.cpp
     ${PROJECT_SOURCE_DIR}/src/communication/gtodom_sub.cpp
+    ${PROJECT_SOURCE_DIR}/src/communication/path_sub.cpp
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/main.cpp)
