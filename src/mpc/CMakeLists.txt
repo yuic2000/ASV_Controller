@@ -24,6 +24,14 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 find_package(osqp REQUIRED)
 
+find_package(OpenMP REQUIRED)
+if(OpenMP_CXX_FOUND)
+    message(STATUS "OpenMP found")
+    add_compile_definitions(EIGEN_USE_THREADS)  # Enable Eigen multi-threading
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 
 message("Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 message("Python3 include dir: ${Python3_INCLUDE_DIRS}")
@@ -65,6 +73,7 @@ target_link_libraries(${PROJECT_NAME}
     mpc_lib 
     mpc_communication
     osqp::osqp
+    OpenMP::OpenMP_CXX
 )
 
 ament_target_dependencies(${PROJECT_NAME} 

@@ -4,7 +4,8 @@
 VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     const Param& param){
 
-    Eigen::setNbThreads(4); // Use 4 threads
+    // Eigen::setNbThreads(1); // Use 4 threads
+    omp_set_num_threads(4); // Control OpenMP thread count
     
     const int Nx = param.Nx;
     const int Nu = param.Nu;
