@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <chrono>
 #include <iostream>
-#include <omp.h>
 
 #include "../utils/eMPCConstraints.h"
 #include "../utils/eMPCCost.h"
