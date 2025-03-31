@@ -187,13 +187,13 @@ void Param::waypoints2twists() {
 
         // Angular velocity (from skew-symmetric part of matrix)
         // Vector3d omega(twist_matrix(2, 1), twist_matrix(0, 2), twist_matrix(1, 0));  
-        Vector3d omega(0, 0, 0.1);
-        // Vector3d omega(0, 0, twist_matrix(1, 0));
+        // Vector3d omega(0, 0, 0.1);
+        Vector3d omega(0, 0, twist_matrix(1, 0));
 
         // Linear velocity (from translational part)
         // Vector3d v = twist_matrix.block<3, 1>(0, 3);
-        Vector3d v(0.5, 0, 0);
-        // Vector3d v(twist_matrix(0, 3), 0, 0);
+        // Vector3d v(0.5, 0, 0);
+        Vector3d v(twist_matrix(0, 3), 0, 0);
 
         VectorXd twist(6);
         twist << omega, v;
