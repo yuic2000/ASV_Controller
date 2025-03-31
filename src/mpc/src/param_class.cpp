@@ -204,6 +204,30 @@ void Param::waypoints2twists() {
     this->xi_ref = xi_ref;
 }
 
+void Param::StationKeeping() {
+    double x_start = this->x0_ref[4];
+    double y_start = this->x0_ref[5];   // Starting position
+
+    double x_goal = x_start + 3.0;
+    double y_goal = y_start + 2.5;
+    std::cout << "x_goal: " << x_goal << ", y_goal: " << y_goal << std::endl;
+
+    int num_waypoints = Nsim;  // Number of waypoints
+
+    MatrixXd X_ref(1, 7);
+    X_ref.row(0) = this->x0_ref.transpose();
+    // X_ref.row(0) << 1, 0, 0, 0, x_goal, y_goal, 0;
+
+    for (int i = 0; i < num_waypoints; ++i) {
+        VectorXd waypoint(7);
+        waypoint << 1, 0, 0, 0, x_goal, y_goal, 0;  // qx, qy, qz, qw, x_goal, y_goal, z
+        X_ref.conservativeResize(X_ref.rows() + 1, NoChange);
+        X_ref.row(X_ref.rows() - 1) = waypoint.transpose();
+    }
+
+    this->X_ref = X_ref;
+}
+
 // Logger class constructor
 Logger::Logger(int Nsim, int Nt) {
     X = MatrixXd::Zero(13, Nsim - Nt + 1);  // +1 for the initial state

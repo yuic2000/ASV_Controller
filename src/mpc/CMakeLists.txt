@@ -85,11 +85,31 @@ ament_target_dependencies(${PROJECT_NAME}
     Python3
 )
 
-install(TARGETS
-  mpc
-  DESTINATION lib/${PROJECT_NAME}
+######## StationKeeping ########
+add_executable(sk ${PROJECT_SOURCE_DIR}/station_keeping.cpp)
+
+target_link_libraries(sk
+    mpc_lib 
+    mpc_communication
+    osqp::osqp
+    OpenMP::OpenMP_CXX
 )
 
+ament_target_dependencies(sk
+    rclcpp 
+    std_msgs 
+    nav_msgs
+    geometry_msgs
+    rcl_interfaces
+    Python3
+)
+################################
+
+install(TARGETS
+  mpc
+  sk
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 # if(BUILD_TESTING)
 #   find_package(ament_lint_auto REQUIRED)

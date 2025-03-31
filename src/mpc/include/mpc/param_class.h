@@ -1,5 +1,8 @@
 #pragma once
 
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <iostream>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include "utils/LieGroup.h"
@@ -50,6 +53,7 @@ public:
     void generate_circle_waypoints();
     void waypoints2twists();
 
+    void StationKeeping();
 };
 class Logger {
     public:
