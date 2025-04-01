@@ -1,5 +1,6 @@
 #include <random>
 #include <fstream>
+#include <filesystem>
 #include <omp.h>
 
 
@@ -28,6 +29,10 @@ int main(int argc, char **argv) {
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
 
+    std::filesystem::path source_file(__FILE__);
+    std::filesystem::path source_dir = source_file.parent_path();
+    param.loadCostFromYAML(source_dir.string() + "/config/station_keeping.yaml");     // Load cost matrices from YAML file
+
     // Initialize MPC node
     rclcpp::init(argc, argv);
     
@@ -47,11 +52,11 @@ int main(int argc, char **argv) {
     }
 
     // // Set desired starting position
-    // x_init = VectorXd::Zero(13);                // when using boat model, start at (0, 0, 0)
+    // x_init = VectorXd::Zero(13);                 // when using boat model, start at (0, 0, 0)
     param.set_desired_init_position(x_init);
 
-    param.StationKeeping();                 // set reference trajectory for station keeping
-    param.waypoints2twists();                  // convert waypoints to referenced twists
+    param.StationKeeping();                         // set reference trajectory for station keeping
+    param.waypoints2twists();                       // convert waypoints to referenced twists
 
 
     Logger Logger_eMPC(Nsim, Nt);

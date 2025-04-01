@@ -19,10 +19,10 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 
-
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
 find_package(osqp REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 find_package(OpenMP REQUIRED)
 if(OpenMP_CXX_FOUND)
@@ -32,10 +32,12 @@ if(OpenMP_CXX_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-
+message("YAML-CPP include dirs: ${yaml-cpp_INCLUDE_DIRS}")
+message("YAML-CPP libs: ${yaml-cpp_LIBRARIES}")
 message("Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 message("Python3 include dir: ${Python3_INCLUDE_DIRS}")
 message("Python3 library dir: ${Python3_LIBRARIES}")
+
 
 include_directories( SYSTEM
     ${rclcpp_INCLUDE_DIRS}
@@ -73,6 +75,7 @@ target_link_libraries(${PROJECT_NAME}
     mpc_lib 
     mpc_communication
     osqp::osqp
+    yaml-cpp
     OpenMP::OpenMP_CXX
 )
 
@@ -92,6 +95,7 @@ target_link_libraries(sk
     mpc_lib 
     mpc_communication
     osqp::osqp
+    yaml-cpp
     OpenMP::OpenMP_CXX
 )
 
