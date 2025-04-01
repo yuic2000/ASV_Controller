@@ -1,5 +1,6 @@
 build/
 lib/
+install/
 
 # VS Code
 .vscode
