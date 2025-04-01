@@ -1,0 +1,12 @@
+# mpc cost funtion for zigzag and circling
+    # MPC cost matrices
+    # [0:3] is angle: roll, pitch, yaw ,
+    # [3:6] is position: x, y, z
+    # [6:9] is angular velocity: roll, pitch, yaw,
+    # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+cost:
+    P: [1e-5, 1e-5, 20, 30, 60, 1e-5, 1e-5, 1e-5, 1e-5, 1e-3, 1e-5, 1e-5]
+    Q: [1e-5, 1e-5, 20, 30, 60, 1e-5, 1e-5, 1e-5, 1e-5, 1e-3, 1e-5, 1e-5]
+    R: [[1e-5, 0], [0, 1e-5]]
+    P_scale: 1
+    Q_scale: 1
