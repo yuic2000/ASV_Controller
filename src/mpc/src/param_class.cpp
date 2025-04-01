@@ -9,8 +9,8 @@ Param::Param() {
     dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 125;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    Nt = 100;                       // MPC planning time, 5 sec
+    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -43,11 +43,41 @@ Param::Param() {
     // [3:6] is position: x, y, z
     // [6:9] is angular velocity: roll, pitch, yaw,
     // [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+    // diag_values_cost = VectorXd(12);
+    // diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
+    // P = diag_values_cost.asDiagonal() * 10;
+    // Q = diag_values_cost.asDiagonal() * 1;
+    // R = MatrixXd::Identity(2, 2) * 1e-5;
+}
+
+void Param::loadCostFromYAML(const std::string& yaml_path) {
+    /*
+        MPC cost matrices
+        [0:3] is angle: roll, pitch, yaw ,
+        [3:6] is position: x, y, z
+        [6:9] is angular velocity: roll, pitch, yaw,
+        [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+    */
+
+    YAML::Node config = YAML::LoadFile(yaml_path);
+    auto cost = config["cost"];
+
+    // Load P and Q
     diag_values_cost = VectorXd(12);
-    diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
-    P = diag_values_cost.asDiagonal() * 10;
-    Q = diag_values_cost.asDiagonal() * 1;
-    R = MatrixXd::Identity(2, 2) * 1e-5;
+    for (int i = 0; i < 12; ++i) {
+        diag_values_cost(i) = cost["P"][i].as<double>();
+    }
+    double P_scale = cost["P_scale"].as<double>();
+    double Q_scale = cost["Q_scale"].as<double>();
+
+    P = diag_values_cost.asDiagonal() * P_scale;
+    Q = diag_values_cost.asDiagonal() * Q_scale;
+
+    // Load R
+    R = MatrixXd(2, 2);
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            R(i, j) = cost["R"][i][j].as<double>();
 }
 
 void Param::set_desired_init_position(VectorXd& x_init) {
@@ -208,19 +238,19 @@ void Param::StationKeeping() {
     double x_start = this->x0_ref[4];
     double y_start = this->x0_ref[5];   // Starting position
 
-    double x_goal = x_start + 3.0;
-    double y_goal = y_start + 2.5;
+    double x_goal = x_start + 3.3;
+    double y_goal = y_start + 4.5;
     std::cout << "x_goal: " << x_goal << ", y_goal: " << y_goal << std::endl;
 
     int num_waypoints = Nsim;  // Number of waypoints
 
     MatrixXd X_ref(1, 7);
-    X_ref.row(0) = this->x0_ref.transpose();
-    // X_ref.row(0) << 1, 0, 0, 0, x_goal, y_goal, 0;
+    // X_ref.row(0) = this->x0_ref.transpose();
+    X_ref.row(0) << 1, 0, 0, 0, x_goal, y_goal, 0;
 
     for (int i = 0; i < num_waypoints; ++i) {
         VectorXd waypoint(7);
-        waypoint << 1, 0, 0, 0, x_goal, y_goal, 0;  // qx, qy, qz, qw, x_goal, y_goal, z
+        waypoint << 0, 0, 0, 1, x_goal, y_goal, 0;  // qx, qy, qz, qw, x_goal, y_goal, z
         X_ref.conservativeResize(X_ref.rows() + 1, NoChange);
         X_ref.row(X_ref.rows() - 1) = waypoint.transpose();
     }

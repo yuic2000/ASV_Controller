@@ -47,6 +47,8 @@ public:
     // Constructor
     Param();
 
+    void loadCostFromYAML(const std::string& yaml_path);
+
     void set_desired_init_position(VectorXd& x_init);
     void set_reference_trajectory();
     void generate_zigzag_waypoints();
