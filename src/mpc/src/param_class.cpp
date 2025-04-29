@@ -6,12 +6,12 @@ using namespace std;
 
 // Param class constructor
 Param::Param() {
-    mode = 1;                       // 1: zigzag, 2: circling
-    dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
+    // mode = 2;                       // 1: zigzag, 2: circling
+    // dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100;                       // MPC planning time, 4 sec
-    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    // Nt = 100;                       // MPC planning time, 4 sec
+    // Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -52,11 +52,51 @@ Param::Param() {
     // [3:6] is position: x, y, z
     // [6:9] is angular velocity: roll, pitch, yaw,
     // [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+    // diag_values_cost = VectorXd(12);
+    // diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
+    // P = diag_values_cost.asDiagonal() * 10;
+    // Q = diag_values_cost.asDiagonal() * 1;
+    // R = MatrixXd::Identity(2, 2) * 1e-5;
+}
+
+void Param::loadFromYAML(const std::string& yaml_path) {
+    /*
+        MPC cost matrices
+        [0:3] is angle: roll, pitch, yaw ,
+        [3:6] is position: x, y, z
+        [6:9] is angular velocity: roll, pitch, yaw,
+        [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+    */
+
+    YAML::Node config = YAML::LoadFile(yaml_path);
+
+    // Load trajectory mode
+    mode = config["mode"].as<int>();        // 1: zigzag, 2: circling
+
+    // Load Control Horizon
+    auto horizon = config["horizon"];
+    dt = horizon["dt"].as<double>();        // MPC simulation time step, (for blueboat: 25Hz)
+    Nt = horizon["Nt"].as<int>();           // MPC planning time, 4 sec
+    Nsim = horizon["Nsim"].as<int>();       // Total simulation time, (60 + Nt*dt) sec
+
+    // // Load costs
+    auto cost = config["cost"];
+    // Load P and Q
     diag_values_cost = VectorXd(12);
-    diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
-    P = diag_values_cost.asDiagonal() * 10;
-    Q = diag_values_cost.asDiagonal() * 1;
-    R = MatrixXd::Identity(2, 2) * 1e-5;
+    for (int i = 0; i < 12; ++i) {
+        diag_values_cost(i) = cost["P"][i].as<double>();
+    }
+    double P_scale = cost["P_scale"].as<double>();
+    double Q_scale = cost["Q_scale"].as<double>();
+
+    P = diag_values_cost.asDiagonal() * P_scale;
+    Q = diag_values_cost.asDiagonal() * Q_scale;
+
+    // Load R
+    R = MatrixXd(2, 2);
+    for (int i = 0; i < 2; ++i)
+        for (int j = 0; j < 2; ++j)
+            R(i, j) = cost["R"][i][j].as<double>();
 }
 
 void Param::set_desired_init_position(VectorXd& x_init) {

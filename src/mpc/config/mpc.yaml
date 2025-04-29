@@ -1,0 +1,24 @@
+# mpc cost funtion for zigzag and circling
+    # MPC cost matrices
+    # [0:3] is angle: roll, pitch, yaw ,
+    # [3:6] is position: x, y, z
+    # [6:9] is angular velocity: roll, pitch, yaw,
+    # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+cost:
+    P: [1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
+    Q: [1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
+    R: [[1e-5, 0], [0, 1e-5]]
+    P_scale: 10
+    Q_scale: 1
+
+horizon:
+    dt: 0.04
+    Nt: 100
+    Nsim: 1600          # (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    # Nt: 125
+    # Nsim: 1625        # (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+
+# Trajectory mode: 
+# 1: zigzag, 2: circling
+mode: 2
+

@@ -1,5 +1,6 @@
 #include <random>
 #include <fstream>
+#include <filesystem>
 #include <vector>
 
 #include "include/mpc/controller/sim_mpc.h"
@@ -17,8 +18,12 @@ int main(int argc, char **argv) {
     std::uniform_real_distribution<double> dis(-0.125 * M_PI, 0.125 * M_PI); // Distribution for angles between -0.25*pi and 0.25*pi
     Eigen::setNbThreads(6); // Use 4 threads
 
-
     Param param;
+
+    std::filesystem::path source_file(__FILE__);
+    std::filesystem::path source_dir = source_file.parent_path();
+    param.loadFromYAML(source_dir.string() + "/config/mpc.yaml");     // Load cost matrices from YAML file
+
     int mode = param.mode;              // 1: zigzag, 2: circling
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time

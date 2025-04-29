@@ -3,6 +3,7 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include "utils/LieGroup.h"
+#include <yaml-cpp/yaml.h>
 
 using namespace Eigen;
 using namespace std;
@@ -43,6 +44,8 @@ public:
 
     // Constructor
     Param();
+    
+    void loadFromYAML(const std::string& yaml_path);
 
     void set_desired_init_position(VectorXd& x_init);
     void set_reference_trajectory();
