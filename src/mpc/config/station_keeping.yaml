@@ -10,3 +10,7 @@ cost:
     R: [[1e-5, 0], [0, 1e-5]]
     P_scale: 1
     Q_scale: 10
+
+Horizon:
+    dt: 0.04
+    Nt: 100
