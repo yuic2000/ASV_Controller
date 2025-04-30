@@ -17,6 +17,7 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
     const int Nu = param.Nu;
     const int Nt = param.Nt;
     const int Noff = Nx * (Nt + 1);
+    const int N_total = (Nt + 1) * Nx + Nt * Nu;    // 1412, not using CBF
     
     MatrixXd D = MatrixXd::Zero(6, 6);  // Kp, Mq, Nr, Xu, Yv, Zw
     // D.diagonal() << -54.3823, -246.0496, -45.265 * (1 + 10 * abs(x0(9))), -77.5544, 0, -546.4805;  // for otter simulation model
@@ -140,5 +141,43 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
 
     bmax.segment((Nt + 1) * Nx, Nu * Nt) = umax.replicate(Nt, 1);
     bmin.segment((Nt + 1) * Nx, Nu * Nt) = umin.replicate(Nt, 1);
+
+    //////////////////////////////////////////////////////////////
+    // // Discrete Control Barrier Function
+    // Vector2d x_obs(0.0, 10.0);  // center at (0, 10)
+    // double a = 0.5;             // horizontal half-axis
+    // double b = 0.2;             // vertical half-axis
+    // double gamma = 0.1;         // relaxation factor
+
+    // // Vector2d xk = p0.segment<2>(3);  // x,y in state 3, 4 in Lie group
+    // Vector2d xk = x0.segment<2>(4);  // x,y in state 4, 5 (SE3)
+    
+    // // Compute h(x_k) >= 0
+    // double hxk = (xk(0) - x_obs(0)) * (xk(0) - x_obs(0)) / (a * a)
+    //            + (xk(1) - x_obs(1)) * (xk(1) - x_obs(1)) / (b * b) - 1.0;
+
+    // // Compute ∇h(x_k)
+    // Vector2d grad_h;
+    // grad_h(0) = 2.0 * (xk(0) - x_obs(0)) / (a * a);
+    // grad_h(1) = 2.0 * (xk(1) - x_obs(1)) / (b * b);
+
+    // // Build constraint: grad_h^T * x_{k+1} >= (1 - gamma) * h(xk)
+    // // double rhs = (1.0 - gamma) * hxk;
+    // double rhs = (1.0 - gamma) * hxk - grad_h.dot(xk);
+    // A.coeffRef(N_total, Nx + 3) = grad_h(0);        // Nx: start after 1 timestep
+    // A.coeffRef(N_total, Nx + 4) = grad_h(1);
+
+    // bmin(N_total) = rhs;
+    // bmax(N_total) = std::numeric_limits<double>::infinity();
+
+    // // for (int k = 0; k < Nt; ++k) {  
+    // //     int idx_xk = k * Nx;    // start from next timestep, k = 1
+    
+    // //     A.coeffRef(N_total + k, idx_xk + 3) = grad_h(0);  // vx component
+    // //     A.coeffRef(N_total + k, idx_xk + 4) = grad_h(1);  // vy component
+    
+    // //     bmin(N_total + k) = rhs;
+    // //     bmax(N_total + k) = std::numeric_limits<double>::infinity();
+    // // }
 
 }

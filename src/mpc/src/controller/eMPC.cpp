@@ -37,6 +37,12 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     MatrixXd A = MatrixXd::Zero(n_total, n_total);          // 1412 x 1412
     VectorXd bmin = VectorXd::Zero(n_total);                // 1412
     VectorXd bmax = VectorXd::Zero(n_total);                // 1412
+    // MatrixXd A = MatrixXd::Zero(n_total + 1, n_total);     // 1413 x 1413
+    // VectorXd bmin = VectorXd::Zero(n_total + 1);           // 1413
+    // VectorXd bmax = VectorXd::Zero(n_total + 1);           // 1413
+    // MatrixXd A = MatrixXd::Zero(n_total + Nt, n_total);     // 1413 x 1413
+    // VectorXd bmin = VectorXd::Zero(n_total + Nt);           // 1413
+    // VectorXd bmax = VectorXd::Zero(n_total + Nt);           // 1413
     eMPCConstraints(A, bmin, bmax, xid, p0, x0, param);     // find A, bmin, bmax via eMPCConstraints
 
 
