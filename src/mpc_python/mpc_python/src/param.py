@@ -24,10 +24,30 @@ class Param:
         self.xmax = np.inf * np.ones(self.Nx)
         self.xmin = -self.xmax
 
+        # control constraints, for vrx wamv
+        # self.umax = np.ones(self.Nu) * 200
+        # self.umin = -np.ones(self.Nu) * 125
         # control constraints, for blueboat
         self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
         self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
 
+        # Mass matrix, vrx wamv
+        # self.I = np.array([      # blueboat rg
+        #     [365.47,  -0.70,  59.17,      0,    154.36,   2.18],
+        #     [-0.70,  948.23,  1.64,    -154.36,   0,    -94.29],
+        #     [59.17,    1.64,  1384.89,  -2.18,   94.29,      0],
+        #     [  0,    -154.36, -2.18,    260.73,   0,         0],
+        #     [154.36,    0,    94.29,      0,    625.45,      0],
+        #     [ 2.18,  -94.29,    0,        0,      0,    500.36]
+        # ])
+        # self.I = np.array([      # otter rg
+        #     [280.21,  0.12,   11.00,    0,    50.04,       0],
+        #     [ 0.12,  837.47,   0.29, -50.04,    0,    -50.04],
+        #     [11.00,   0.29,  1359.34,   0,    50.04,       0],
+        #     [  0,    -50.04,    0,    260.73,   0,         0],
+        #     [50.04,    0,     50.04,    0,    625.45,      0],
+        #     [  0,    -50.04,    0,      0,      0,    500.36]
+        # ])
         # Mass matrix, from Blueboat CAD model
         self.I = np.array([
             [14.47,  -0.35,  6.55,    0,   17.66,   0.25],
