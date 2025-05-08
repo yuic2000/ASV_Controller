@@ -26,7 +26,7 @@ class Param:
 
         # control constraints, for vrx wamv
         # self.umax = np.ones(self.Nu) * 200
-        # self.umin = -np.ones(self.Nu) * 125
+        # self.umin = -np.ones(self.Nu) * 100
         # control constraints, for blueboat
         self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
         self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
@@ -104,22 +104,18 @@ class Param:
             new_quat = Rotation.from_matrix(X[:3, :3]).as_quat()        # x, y, z, w
 
             self.X_ref = np.vstack([self.X_ref, np.concatenate([new_quat, X[:3, 3]])])
-
             self.xi_ref = np.vstack([self.xi_ref, xid_ref_rt])
-        
-        # self.X_ref[:, 5] += 2   # offset in y direction, use when using vrx ground truth odometry
-
 
     def generate_zigzag_waypoints(self):
-        amplitude=1.0
-        wavelength=10.0
+        amplitude=0.8
+        wavelength=12.0
 
         segment_steps = self.Nsim       # Number of waypoints
 
         x_start, y_start, z_start = self.x0_ref[4:7]  # Starting position
         
-        x_vals = np.linspace(x_start, x_start + 3 * wavelength, segment_steps)  # X-axis progression
-        y_vals = y_start + amplitude * np.sin((2 * np.pi / wavelength) * (x_vals - x_start))
+        x_vals = np.linspace(x_start, x_start + 2.5 * wavelength, segment_steps)  # X-axis progression
+        y_vals = (y_start + amplitude) - amplitude * np.cos((2 * np.pi / wavelength) * (x_vals - x_start))
 
 
         for i in range(segment_steps):
@@ -127,10 +123,8 @@ class Param:
             y = y_vals[i]
 
             # Compute yaw angle as tangent to the sine curve
-            theta = np.arctan2(
-                (2 * np.pi / wavelength) * amplitude * np.cos((2 * np.pi / wavelength) * x),
-                1
-            )
+            dy_dx = (2 * np.pi / wavelength) * amplitude * np.sin((2 * np.pi / wavelength) * (x - x_start))
+            theta = np.arctan2(dy_dx, 1.0)
 
             # Convert yaw to quaternion (x, y, z, w)
             quaternion = Rotation.from_euler('xyz', [0, 0, theta]).as_quat()
