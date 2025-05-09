@@ -9,8 +9,8 @@ Param::Param() {
     dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
-    Nt = 100;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(64.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+    Nt = 125;                       // MPC planning time, 5 sec
+    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -29,9 +29,9 @@ Param::Param() {
     xmax = VectorXd::Constant(Nx, numeric_limits<double>::infinity()); 
     xmin = -xmax; 
 
-    // // for otter simulation model control limits, used for vrx
-    // umax = VectorXd::Constant(Nu, 115); 
-    // umin = -VectorXd::Constant(Nu, 65);
+    // for otter simulation model control limits, used for vrx
+    // umax = VectorXd::Constant(Nu, 200); 
+    // umin = -VectorXd::Constant(Nu, 100);
 
     // // for blueboat model control limits, used for blueboat
     umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
@@ -130,8 +130,8 @@ void Param::set_reference_trajectory() {
 }
 
 void Param::generate_zigzag_waypoints() {
-    double amplitude = 1.0;
-    double wavelength = 10.0;
+    double amplitude = 0.8;
+    double wavelength = 12.0;
     int segment_steps = Nsim;  // Number of waypoints
 
     MatrixXd X_ref(1, 7);
@@ -140,18 +140,16 @@ void Param::generate_zigzag_waypoints() {
     double x_start = this->x0_ref[4];
     double y_start = this->x0_ref[5];   // Starting position
 
-    VectorXd x_vals = VectorXd::LinSpaced(segment_steps, x_start, x_start + 3 * wavelength);  // X-axis progression
-    VectorXd y_vals = y_start + amplitude * (2 * M_PI / wavelength * (x_vals.array() - x_start)).sin();  // Sinusoidal y
+    VectorXd x_vals = VectorXd::LinSpaced(segment_steps, x_start, x_start + 2.5 * wavelength);  // X-axis progression
+    VectorXd y_vals = y_start + amplitude - amplitude * (2 * M_PI / wavelength * (x_vals.array() - x_start)).cos();  // Sinusoidal y
 
     for (int i = 0; i < segment_steps; ++i) {
         double x = x_vals[i];
         double y = y_vals[i];
 
         // Compute yaw angle as tangent to the sine curve
-        double theta = atan2(
-            (2 * M_PI / wavelength) * amplitude * cos((2 * M_PI / wavelength) * x),
-            1
-        );
+        double dy_dx = (2 * M_PI / wavelength) * amplitude * sin((2 * M_PI / wavelength) * (x - x_start));
+        double theta = atan2(dy_dx, 1.0);
 
         Quaterniond quaternion(AngleAxisd(theta, Vector3d::UnitZ()));   // quat: w, x, y, z
 
