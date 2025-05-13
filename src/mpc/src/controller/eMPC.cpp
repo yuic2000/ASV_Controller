@@ -76,6 +76,29 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     // Solve the optimization problem
     if(!exitflag) exitflag = osqp_solve(solver);
     // std::cout << "exitflag: " << exitflag << std::endl;
+    // // OSQP status
+    // if (!exitflag) {
+    //     // Solver ran — now inspect status
+    //     if (solver->info) {
+    //         std::cout << "Solver status string: " << solver->info->status << std::endl;
+    //         std::cout << "Solver status val: " << solver->info->status_val << std::endl;
+    
+    //         if (solver->info->status_val == OSQP_MAX_ITER_REACHED) {
+    //             std::cout << "[⚠️] Solver reached maximum iteration limit!" << std::endl;
+    //         } else if (solver->info->status_val == OSQP_SOLVED) {
+    //             std::cout << "[✅] Solver converged successfully." << std::endl;
+    //         } else {
+    //             std::cout << "[❗] Solver terminated with status: " << solver->info->status << std::endl;
+    //         }
+    
+    //         std::cout << "Iterations used: " << solver->info->iter << std::endl;
+    //     } else {
+    //         std::cerr << "[❌] Solver info is null!" << std::endl;
+    //     }
+    // } else {
+    //     std::cerr << "[❌] osqp_solve failed with exitflag: " << exitflag << std::endl;
+    // }
+    
 
 
     // Calculate the starting index for u
