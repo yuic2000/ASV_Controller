@@ -5,7 +5,7 @@ using namespace std;
 
 // Param class constructor
 Param::Param() {
-    mode = 1;                       // 1: zigzag, 2: circling
+    mode = 2;                       // 1: zigzag, 2: circling
     dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
     Nx = 12; 
     Nu = 2; 
@@ -30,12 +30,12 @@ Param::Param() {
     xmin = -xmax; 
 
     // for otter simulation model control limits, used for vrx
-    // umax = VectorXd::Constant(Nu, 200); 
-    // umin = -VectorXd::Constant(Nu, 100);
+    umax = VectorXd::Constant(Nu, 200); 
+    umin = -VectorXd::Constant(Nu, 100);
 
     // // for blueboat model control limits, used for blueboat
-    umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
-    umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
+    // umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
+    // umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
 
     // MPC cost matrices
@@ -63,15 +63,17 @@ void Param::loadCostFromYAML(const std::string& yaml_path) {
     auto cost = config["cost"];
 
     // Load P and Q
-    diag_values_cost = VectorXd(12);
+    diag_values_cost_P = VectorXd(12);
+    diag_values_cost_Q = VectorXd(12);
     for (int i = 0; i < 12; ++i) {
-        diag_values_cost(i) = cost["P"][i].as<double>();
+        diag_values_cost_P(i) = cost["P"][i].as<double>();
+        diag_values_cost_Q(i) = cost["Q"][i].as<double>();
     }
     double P_scale = cost["P_scale"].as<double>();
     double Q_scale = cost["Q_scale"].as<double>();
 
-    P = diag_values_cost.asDiagonal() * P_scale;
-    Q = diag_values_cost.asDiagonal() * Q_scale;
+    P = diag_values_cost_P.asDiagonal() * P_scale;
+    Q = diag_values_cost_Q.asDiagonal() * Q_scale;
 
     // Load R
     R = MatrixXd(2, 2);

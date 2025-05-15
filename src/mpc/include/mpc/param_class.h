@@ -39,7 +39,8 @@ public:
     Matrix4d init_pose;
 
     // Design cost function parameters
-    VectorXd diag_values_cost;      // Diagonal values for the cost matrices for P, Q
+    VectorXd diag_values_cost_P;      // Diagonal values for the cost matrices for P
+    VectorXd diag_values_cost_Q;      // Diagonal values for the cost matrices for Q
     MatrixXd P;
     MatrixXd Q;
     MatrixXd R;
