@@ -32,8 +32,6 @@ if(OpenMP_CXX_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
-message("YAML-CPP include dirs: ${yaml-cpp_INCLUDE_DIRS}")
-message("YAML-CPP libs: ${yaml-cpp_LIBRARIES}")
 message("Eigen3 include dir: ${EIGEN3_INCLUDE_DIR}")
 message("Python3 include dir: ${Python3_INCLUDE_DIRS}")
 message("Python3 library dir: ${Python3_LIBRARIES}")
