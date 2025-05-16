@@ -4,32 +4,39 @@ from scipy.linalg import expm, logm
 from scipy.spatial.transform import Rotation
 
 import rclpy
+import yaml
+import os
 from mpc_python.communication.gtodom_sub import GtOdomSubscriberNode
-
 
 class Param:
     def __init__(self):
-        self.dt = 0.04                              # control frequency, 25 Hz, original 20Hz
-        self.Nsim = int(np.ceil(64 / self.dt))      # Total simulation time + Planning time
+
+        try:
+            yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'mpc.yaml'))
+            self.load_from_yaml(yaml_path)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"YAML file not found at {yaml_path}")
+
+        # ───────── state ─────────
+        # self.dt = 0.04                            # control frequency, 25 Hz, original 20Hz
+        # self.Nt = 100                             # horizon length
+        self.Nsim = int(np.ceil(64 / self.dt))      # Temp, Total simulation time + Planning time
 
         self.mode = 1                               # mode 1: zigzag, mode 2: circling
-        self.V_c = 0.0                              # Ocean current velocity, 0.5
-        self.beta_c = 0.0                           # Ocean current direction, 1
 
         self.Nx = 12                                # dimension x   
         self.Nu = 2                                 # dimension of u
-        self.Nt = 100                               # horizon length
 
         # state constraints
         self.xmax = np.inf * np.ones(self.Nx)
         self.xmin = -self.xmax
 
         # control constraints, for vrx wamv
-        # self.umax = np.ones(self.Nu) * 200
-        # self.umin = -np.ones(self.Nu) * 100
+        self.umax = np.ones(self.Nu) * self.max_thrust   # 200 N
+        self.umin = -np.ones(self.Nu) * self.min_thrust  # -100 N
         # control constraints, for blueboat
-        self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
-        self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
+        # self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
+        # self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
 
         # Mass matrix, vrx wamv
         # self.I = np.array([      # blueboat rg
@@ -58,22 +65,57 @@ class Param:
             [0.25, -10.79,    0,     0,     0,    57.26]
         ])
 
-        # MPC cost matrices
-        # [0:3] is angle: roll, pitch, yaw ,
-        # [3:6] is position: x, y, z
-        # [6:9] is angular velocity: roll, pitch, yaw,
-        # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
-        self.P = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 10
-        self.Q = np.diag([1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]) * 1
-        self.R = np.eye(2) * 1e-5
 
+    def load_from_yaml(self, yaml_path):
+        # Load parameters from YAML file
+        with open(yaml_path, 'r') as file:
+            config = yaml.safe_load(file)
+
+        if 'ros_topic' in config:
+            self.path_topic = config['ros_topic']['path_topic']
+            self.pose_topic = config['ros_topic']['pose_topic']
+        
+        if 'parameters' in config:
+            self.goal_tol = config['parameters']['goal_tol']
+            self.vx_init = config['parameters']['v_surge']
+            self.yaw_rate_init = config['parameters']['yaw_rate']
+            self.max_thrust = config['parameters']['max_thrust']
+            self.min_thrust = config['parameters']['min_thrust']
+
+        if 'cost' in config:        
+            # Load P and Q matrices
+            # [0:3] is angle: roll, pitch, yaw ,
+            # [3:6] is position: x, y, z
+            # [6:9] is angular velocity: roll, pitch, yaw,
+            # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
+            diag_values_cost_P = np.array(config['cost']['P'], dtype=float)
+            diag_values_cost_Q = np.array(config['cost']['Q'], dtype=float)
+            P_scale = float(config['cost']['P_scale'])
+            Q_scale = float(config['cost']['Q_scale'])
+            
+            self.P = np.diag(diag_values_cost_P) * P_scale
+            self.Q = np.diag(diag_values_cost_Q) * Q_scale
+            
+            # Load R matrix
+            self.R = np.zeros((2, 2))
+            for i in range(2):
+                for j in range(2):
+                    self.R[i, j] = float(config['cost']['R'][i][j])
+    
+        if 'Horizon' in config:
+            self.dt = float(config['Horizon']['dt'])
+            self.Nt = int(config['Horizon']['Nt'])
+            
+        print('Parameters loaded from YAML file')
 
     def set_desired_posistion(self, x_init):
         # self.q0_ref = x_init[0:4]
-        self.q0_ref = np.array([0, 0, 0, 1])            # desired quaternion: x, y, z, w
+        self.q0_ref = np.array([0, 0, 0, 1])                   # desired quaternion: x, y, z, w
         self.p0_ref = x_init[4:7]
-        self.w0_ref = np.array([0, 0, 0.1])             # desired yaw velocity 0.1 rad/s
-        self.v0_ref = np.array([0.5, 0, 0])             # desired surge velocity 0.5 m/s
+        self.w0_ref = np.array([0, 0, self.yaw_rate_init])     # desired yaw velocity 0.1 rad/s
+        self.v0_ref = np.array([self.vx_init, 0, 0])           # desired surge velocity 0.5 m/s
+        # self.w0_ref = np.array([0, 0, 0.1])                  # desired yaw velocity 0.1 rad/s
+        # self.v0_ref = np.array([0.5, 0, 0])                  # desired surge velocity 0.5 m/s
 
         self.x0_ref = np.concatenate([self.q0_ref, self.p0_ref])
         self.xid_ref = np.concatenate([self.w0_ref, self.v0_ref])
@@ -142,7 +184,6 @@ class Param:
         
         angles = np.linspace(-np.pi/2, 3*np.pi/2, num_waypoints)  # Counterclockwise from (0,0)
         
-        waypoints = []
         for theta in angles:
             x = center[0] + radius * np.cos(theta)
             y = center[1] + radius * np.sin(theta)
