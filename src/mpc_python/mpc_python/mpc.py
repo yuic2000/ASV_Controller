@@ -28,7 +28,7 @@ class MPC(Node):
             raise RuntimeError(f"Error loading parameters: {e}")
 
         self.solver = {'init': 0}
-        self.logger = Logger(self.param.Nsim, self.param.Nt)
+        self.initialized_wp = True     # False: using path callback, True: using Zigzag/Circling waypoints
 
         # ───────── state ─────────
         self.path           = []      # list[ np.array([x,y]) ]
@@ -66,6 +66,7 @@ class MPC(Node):
         self.Nsim = len(self.path)
         
         self.param.X_ref = np.empty((0, 7))  # reset reference trajectory
+        self.param.xi_ref = np.empty((0, 6))  # reset twist trajectory
         
         for i in range(self.Nsim - 1):
             p1 = self.path[i]
@@ -77,51 +78,54 @@ class MPC(Node):
             self.param.X_ref = np.vstack([self.param.X_ref, np.flatten([quaternion, [p1, 0]])])
 
         self.param.waypoints2twist()        # generate twist trajectory
+        self.logger = Logger(self.Nsim, self.param.Nt)
 
         self.i_wp = 0
         self.reached_final = False
         self.get_logger().info(f'Received path with {self.Nsim} waypoints')
 
     def cb_odom(self, msg: Odometry):
-        if not self.path or self.reached_final:
+        # Boat states: return self.x_wrld (Orientation, Position, Angular Velocity, Velocity)
+        self.odom_transform(msg)
+
+        # ─────── Initializee Zigzag/Circling Waypoints when not using path callback ───────
+        if self.initialized_wp:
+            self.param.set_desired_posistion(self.x_wrld)
+            # self.param.X_ref = np.empty((0, 7))  # reset reference trajectory
+            # self.param.xi_ref = np.empty((0, 6))
+            self.param.generate_zigzag_waypoints()
+            # self.param.generate_circle_waypoints()
+            self.param.waypoints2twists()        # generate twist trajectory
+            self.Nsim = len(self.param.X_ref)
+            self.logger = Logger(self.Nsim, self.param.Nt)
+            self.initialized_wp = False
+        
+        # ─────── Checked if path is given or reach final waypoint ───────
+        if self.param.X_ref.size == 0 or self.reached_final:
             self.get_logger().info("No path to follow or path already completed.")
             return  # nothing to track
-        
-        # robot states (Orientation, Position, Angular Velocity, Velocity)
-        self.odom_transform(msg)
-        # self.get_logger().info(f"Robot position: ({pos[0]:.2f}, {pos[1]:.2f}), yaw: {yaw:.2f} radians")
        
-        # current goal waypoint
+        # ───────── Current Waypoint ─────────
         X_ref_rt = self.param.X_ref[self.i_wp]
         xi_ref_rt = self.param.xi_ref[self.i_wp : self.i_wp + self.param.Nt]
+        self.i_wp += 1
 
-        goal = X_ref_rt[4:6]        # goal position in world frame
-        pos = self.x_wrld[4:6]      # current position in world frame
-        vec = pos - goal
-        dist = np.hypot(*vec)
-        self.get_logger().info(f"Goal position: ({goal[0]:.2f}, {goal[1]:.2f}), distance: {dist:.2f}")
-        self.get_logger().info(f"Vector to goal: ({vec[0]:.2f}, {vec[1]:.2f})")
-
-        # advance to next waypoint if close enough
-        if dist < self.param.goal_tol:
-            self.i_wp += 1
-            if self.i_wp >= self.Nsim - self.param.Nt:
-                self.reached_final = True  # finished
-                self.stop_boat()
-                self.get_logger().info("Finished path 🎉")
-                self.logger.X = np.array(self.X).T
-                self.logger.U = np.array(self.U).T
-                self.logger.Err = np.array(self.Err).T
-                self.logger.Err2 = np.array(self.Err2).T
-                plot_mpc(self.logger, self.param.X_ref, self.param.dt)
-
+        # ───────── Check if reached the final waypoint ─────────
+        if self.i_wp >= self.Nsim - self.param.Nt:
+            self.reached_final = True  # finished
+            self.stop_boat()
+            self.get_logger().info("Finished path 🎉")
+            self.logger.X = np.array(self.X).T
+            self.logger.U = np.array(self.U).T
+            self.logger.Err = np.array(self.Err).T
+            self.logger.Err2 = np.array(self.Err2).T
+            plot_mpc(self.logger, self.param.X_ref, self.param.dt)
             return
 
         # ───────── MPC ─────────
         start_time = time.time()
         u, self.solver = eMPC(self.x_wrld, X_ref_rt, xi_ref_rt, self.param, self.solver)    # u[0]: right, u[1]: left
 
-        # print(f"u: {u}")
         self.vrx_thrust_pub_r_.publish(Float64(data=float(u[0])))       # right
         self.vrx_thrust_pub_l_.publish(Float64(data=float(u[1])))       # left
         self.mavlink_thrust_pub_.publish(Float64MultiArray(data=[float(u[0]), float(u[1])]))    # right, left
