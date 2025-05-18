@@ -33,7 +33,7 @@ class Param:
 
         # control constraints, for vrx wamv
         self.umax = np.ones(self.Nu) * self.max_thrust   # 200 N
-        self.umin = -np.ones(self.Nu) * self.min_thrust  # -100 N
+        self.umin = np.ones(self.Nu) * self.min_thrust  # -100 N
         # control constraints, for blueboat
         # self.umax = np.ones(self.Nu) * 50           # 3.5 kgF
         # self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
@@ -155,7 +155,7 @@ class Param:
         segment_steps = self.Nsim       # Number of waypoints
 
         x_start, y_start, z_start = self.x0_ref[4:7]  # Starting position
-        
+
         x_vals = np.linspace(x_start, x_start + 2.5 * wavelength, segment_steps)  # X-axis progression
         y_vals = (y_start + amplitude) - amplitude * np.cos((2 * np.pi / wavelength) * (x_vals - x_start))
 
