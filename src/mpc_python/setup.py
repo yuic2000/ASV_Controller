@@ -23,6 +23,7 @@ setup(
             'mpc_cmd_pub = mpc_python.communication.mpc_cmd_pub:main',
             'gtodom_sub = mpc_python.communication.gtodom_sub:main',
             'main = mpc_python.main:main',
+            'mpc = mpc_python.mpc:main',
         ],
     },
 )
