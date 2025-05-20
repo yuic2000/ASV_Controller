@@ -38,6 +38,17 @@ public:
     MatrixXd xi_ref;
     Matrix4d init_pose;
 
+    // ROS Topics
+    std::string path_topic;
+    std::string pose_topic;
+
+    // MPC Horizon and Parameters
+    double goal_tol;        // m
+    double v_surge;         // m/s
+    double yaw_rate;        // rad/s
+    double max_thrust;      // N
+    double min_thrust;      // N
+
     // Design cost function parameters
     VectorXd diag_values_cost_P;      // Diagonal values for the cost matrices for P
     VectorXd diag_values_cost_Q;      // Diagonal values for the cost matrices for Q
@@ -46,9 +57,9 @@ public:
     MatrixXd R;
 
     // Constructor
-    Param();
+    Param(const std::string& yaml_path);
 
-    void loadCostFromYAML(const std::string& yaml_path);
+    void loadYAML(const std::string& yaml_path);
 
     void set_desired_init_position(VectorXd& x_init);
     void set_reference_trajectory();

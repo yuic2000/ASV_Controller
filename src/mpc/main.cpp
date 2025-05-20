@@ -21,16 +21,17 @@ int main(int argc, char **argv) {
     omp_set_num_threads(8); // Control OpenMP thread count
 
 
-    bool waypoint_by_twist = false;
+    std::filesystem::path source_file(__FILE__);
+    std::filesystem::path source_dir = source_file.parent_path();
+    std::string yaml_path = source_dir.string() + "/config/mpc.yaml";
 
-    Param param;
+    Param param(yaml_path);
     int mode = param.mode;              // 1: zigzag, 2: circling
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
+    std::cout << "Nsim: " << Nsim << ", Nt: " << Nt << std::endl;
 
-    std::filesystem::path source_file(__FILE__);
-    std::filesystem::path source_dir = source_file.parent_path();
-    param.loadCostFromYAML(source_dir.string() + "/config/mpc.yaml");     // Load cost matrices from YAML file
+    bool waypoint_by_twist = false;
 
     // Initialize MPC node
     rclcpp::init(argc, argv);

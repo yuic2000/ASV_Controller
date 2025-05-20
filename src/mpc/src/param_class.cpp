@@ -4,13 +4,27 @@ using namespace Eigen;
 using namespace std;
 
 // Param class constructor
-Param::Param() {
-    mode = 2;                       // 1: zigzag, 2: circling
-    dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
+Param::Param(const std::string& yaml_path) {
+
+    // Load parameters from YAML file
+    std::cout << "Loading parameters from YAML file: " << yaml_path << std::endl;
+    try
+    {
+        loadYAML(yaml_path);     // Load cost matrices from YAML file 
+        std::cout << "Loaded parameters from YAML file: " << yaml_path << std::endl;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "Error loading parameters: " << e.what() << '\n';
+    }
+
+    mode = 1;                          // 1: zigzag, 2: circling
+    // dt = 0.04;                      // MPC simulation time step, (for blueboat: 25Hz)
+    // Nt = 125;                       // MPC planning time, 5 sec
+    // Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
+
     Nx = 12; 
     Nu = 2; 
-    Nt = 125;                       // MPC planning time, 5 sec
-    Nsim = (int)(ceil(65.0 / dt));  // Total simulation time, (60 + Nt*dt) sec
     V_c = 0.0;                      // current speed (m/s)
     beta_c = 1.0;                   // current direction (rad)
 
@@ -30,38 +44,42 @@ Param::Param() {
     xmin = -xmax; 
 
     // for otter simulation model control limits, used for vrx
-    umax = VectorXd::Constant(Nu, 200); 
-    umin = -VectorXd::Constant(Nu, 100);
-
+    umax = VectorXd::Constant(Nu, max_thrust);      //  200 N
+    umin = VectorXd::Constant(Nu, min_thrust);      // -100 N
     // // for blueboat model control limits, used for blueboat
     // umax = VectorXd::Constant(Nu, 50);      // < 5.1 kgf 
     // umin = -VectorXd::Constant(Nu, 26);     // > -2.7 kgf
     //////////////////////////////////////////////////////////////////////////////////
-
-    // MPC cost matrices
-    // [0:3] is angle: roll, pitch, yaw ,
-    // [3:6] is position: x, y, z
-    // [6:9] is angular velocity: roll, pitch, yaw,
-    // [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
-    // diag_values_cost = VectorXd(12);
-    // diag_values_cost << 1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5;
-    // P = diag_values_cost.asDiagonal() * 10;
-    // Q = diag_values_cost.asDiagonal() * 1;
-    // R = MatrixXd::Identity(2, 2) * 1e-5;
 }
 
-void Param::loadCostFromYAML(const std::string& yaml_path) {
-    /*
-        MPC cost matrices
+void Param::loadYAML(const std::string& yaml_path) {
+
+    YAML::Node config = YAML::LoadFile(yaml_path);
+    auto topic = config["ros_topic"];
+    auto parameter = config["parameters"];
+    auto cost = config["cost"];
+    auto horizon = config["horizon"];
+
+    // Load ROS topic names
+    path_topic = topic["path_topic"].as<std::string>();
+    pose_topic = topic["pose_topic"].as<std::string>();
+
+    // Load Horizon and Parameters
+    dt = horizon["dt"].as<double>();
+    Nt = horizon["Nt"].as<int>();            // MPC planning time
+    Nsim = horizon["Nsim"].as<int>();        // Total simulation time
+    goal_tol = parameter["goal_tol"].as<double>();  // m
+    v_surge = parameter["v_surge"].as<double>();   // m/s
+    yaw_rate = parameter["yaw_rate"].as<double>(); // rad/s
+    max_thrust = parameter["max_thrust"].as<double>(); // N
+    min_thrust = parameter["min_thrust"].as<double>(); // N
+
+    /*  Load MPC cost matrices
         [0:3] is angle: roll, pitch, yaw ,
         [3:6] is position: x, y, z
         [6:9] is angular velocity: roll, pitch, yaw,
         [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
     */
-
-    YAML::Node config = YAML::LoadFile(yaml_path);
-    auto cost = config["cost"];
-
     // Load P and Q
     diag_values_cost_P = VectorXd(12);
     diag_values_cost_Q = VectorXd(12);
@@ -256,6 +274,7 @@ void Param::StationKeeping() {
     }
 
     this->X_ref = X_ref;
+    waypoints2twists();                       // convert waypoints to referenced twists
 }
 
 // Logger class constructor

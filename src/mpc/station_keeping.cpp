@@ -21,17 +21,15 @@ int main(int argc, char **argv) {
     // Eigen::setNbThreads(6); // Use 6 threads
     omp_set_num_threads(8); // Control OpenMP thread count
 
+    std::filesystem::path source_file(__FILE__);
+    std::filesystem::path source_dir = source_file.parent_path();
+    std::string yaml_path = source_dir.string() + "/config/station_keeping.yaml";
 
-    bool waypoint_by_twist = false;
-
-    Param param;
+    Param param(yaml_path);
     int mode = param.mode;              // 1: zigzag, 2: circling
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
 
-    std::filesystem::path source_file(__FILE__);
-    std::filesystem::path source_dir = source_file.parent_path();
-    param.loadCostFromYAML(source_dir.string() + "/config/station_keeping.yaml");     // Load cost matrices from YAML file
 
     // Initialize MPC node
     rclcpp::init(argc, argv);
@@ -56,7 +54,6 @@ int main(int argc, char **argv) {
     param.set_desired_init_position(x_init);
 
     param.StationKeeping();                         // set reference trajectory for station keeping
-    param.waypoints2twists();                       // convert waypoints to referenced twists
 
 
     Logger Logger_eMPC(Nsim, Nt);
