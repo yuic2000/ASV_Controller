@@ -188,16 +188,7 @@ class MPC(Node):
         w_z = msg.twist.twist.angular.z
         w_body = np.array([w_x, w_y, w_z])
 
-        # world frame
-        wrld_coord = np.block([
-            [quat2rotm(q_odom), p_odom.reshape(-1, 1)],
-            [np.zeros((1, 3)), np.ones(1)]
-        ])
-
-        q_wrld = np.array(rotm2quat(wrld_coord[:3, :3]))
-        p_wrld = wrld_coord[:3, 3].flatten()
-
-        self.x_wrld = np.concatenate([q_wrld, p_wrld, w_body, v_body], axis=None)
+        self.x_wrld = np.concatenate([q_odom, p_odom, w_body, v_body], axis=None)
 
 
 def main(args=None):
