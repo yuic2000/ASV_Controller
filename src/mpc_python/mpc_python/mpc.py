@@ -89,7 +89,7 @@ class MPC(Node):
         self.odom_transform(msg)
 
         # ─────── Initializee Zigzag/Circling Waypoints when not using path callback ───────
-        if self.initialized_wp:
+        if self.initialized_wp and self.i_wp==0:
             self.param.set_desired_posistion(self.x_wrld)
             # self.param.X_ref = np.empty((0, 7))  # reset reference trajectory
             # self.param.xi_ref = np.empty((0, 6))
@@ -129,7 +129,7 @@ class MPC(Node):
         self.vrx_thrust_pub_r_.publish(Float64(data=float(u[0])))       # right
         self.vrx_thrust_pub_l_.publish(Float64(data=float(u[1])))       # left
         self.mavlink_thrust_pub_.publish(Float64MultiArray(data=[float(u[0]), float(u[1])]))    # right, left
-        self.get_logger().info(f"right: {u[0]:.2f},\tleft: {u[1]:.2f}")
+        self.get_logger().info(f"right: {u[0]:7.2f}, left: {u[1]:7.2f}")
         
         # ───────── Save in Logger ─────────
         Xd = np.eye(4)

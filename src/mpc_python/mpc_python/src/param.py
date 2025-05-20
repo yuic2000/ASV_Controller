@@ -11,11 +11,14 @@ from mpc_python.communication.gtodom_sub import GtOdomSubscriberNode
 class Param:
     def __init__(self):
 
-        try:
-            yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'mpc.yaml'))
-            self.load_from_yaml(yaml_path)
-        except FileNotFoundError:
+        yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config', 'mpc.yaml'))
+        if not os.path.isfile(yaml_path):
+            import ament_index_python.packages
+            pkg_share = ament_index_python.packages.get_package_share_directory('mpc_python')
+            yaml_path = os.path.join(pkg_share, 'config', 'mpc.yaml')
+        if not os.path.isfile(yaml_path):
             raise FileNotFoundError(f"YAML file not found at {yaml_path}")
+        self.load_from_yaml(yaml_path)
 
         # ───────── state ─────────
         # self.dt = 0.04                            # control frequency, 25 Hz, original 20Hz
@@ -39,31 +42,23 @@ class Param:
         # self.umin = -np.ones(self.Nu) * 26          # -3.0 kgF
 
         # Mass matrix, vrx wamv
-        # self.I = np.array([      # blueboat rg
-        #     [365.47,  -0.70,  59.17,      0,    154.36,   2.18],
-        #     [-0.70,  948.23,  1.64,    -154.36,   0,    -94.29],
-        #     [59.17,    1.64,  1384.89,  -2.18,   94.29,      0],
-        #     [  0,    -154.36, -2.18,    260.73,   0,         0],
-        #     [154.36,    0,    94.29,      0,    625.45,      0],
-        #     [ 2.18,  -94.29,    0,        0,      0,    500.36]
-        # ])
-        # self.I = np.array([      # otter rg
-        #     [280.21,  0.12,   11.00,    0,    50.04,       0],
-        #     [ 0.12,  837.47,   0.29, -50.04,    0,    -50.04],
-        #     [11.00,   0.29,  1359.34,   0,    50.04,       0],
-        #     [  0,    -50.04,    0,    260.73,   0,         0],
-        #     [50.04,    0,     50.04,    0,    625.45,      0],
-        #     [  0,    -50.04,    0,      0,      0,    500.36]
-        # ])
-        # Mass matrix, from Blueboat CAD model
         self.I = np.array([
-            [14.47,  -0.35,  6.55,    0,   17.66,   0.25],
-            [-0.35,  21.55,  0.13, -17.66,   0,   -10.79],
-            [6.55,   0.13, 12.33,  -0.25, 10.79,      0],
-            [0,    -17.66, -0.25,  34.31,   0,        0],
-            [17.66,   0,   10.79,    0,   71.58,      0],
-            [0.25, -10.79,    0,     0,     0,    57.26]
+            [225.17,  0.12,  0.99,    0,   0,   0],
+            [0.12,  454.1,  0.29, 0,   0,   0],
+            [0.99,   0.29, 499.75,  0, 0,      0],
+            [0,    0, 0,  250.18,   0,        0],
+            [0,   0,   0,    0,   250.18,      0],
+            [0, 0,    0,     0,     0,    250.18]
         ])
+        # # Mass matrix, from Blueboat CAD model
+        # self.I = np.array([
+        #     [14.47,  -0.35,  6.55,    0,   17.66,   0.25],
+        #     [-0.35,  21.55,  0.13, -17.66,   0,   -10.79],
+        #     [6.55,   0.13, 12.33,  -0.25, 10.79,      0],
+        #     [0,    -17.66, -0.25,  34.31,   0,        0],
+        #     [17.66,   0,   10.79,    0,   71.58,      0],
+        #     [0.25, -10.79,    0,     0,     0,    57.26]
+        # ])
 
 
     def load_from_yaml(self, yaml_path):

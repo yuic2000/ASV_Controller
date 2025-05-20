@@ -21,45 +21,35 @@ def eMPCConstraints(xid, p0, x0, param):
     Noff = Nx * (Nt + 1)
     bmin = np.zeros(A.shape[0])
     
-    # D = np.diag([-1465.11, -7062.4619, -1384.8896 * (1 + 10 * abs(x0[9])), -77.5544, 0, -2606.1812])  # for vrx wamv (blueboat rg)
-    # D = np.diag([-1300.6533, -6678.3605, -1359.3388 * (1 + 10 * abs(x0[9])), -77.5544, 0, -2606.1812])  # for vrx wamv (otter rg)
-    D = np.diag([-12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0[9])), -77.5544, 0, -250.3037])     # for blueboat
+
+    D = np.diag([-300, -900, -800, -100, -100, -500])  # from vrx wamv (vrx), Kp Mq, Nr, Xu, Yv, Zw
+    # D = np.diag([-12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0[9])), -77.5544, 0, -250.3037])     # for blueboat
     I_inv = np.linalg.inv(I)
     
     for k in range(Nt):
         # Hydrodynamic Damping Matrix
         D_t = D.copy()
-        # D_t[2, 2] -= 1384.8896  * (10 * abs(xid[k, 2]))   # for vrx wamv (blueboat rg)
-        # D_t[2, 2] -= 1359.3388  * (10 * abs(xid[k, 2]))   # for vrx wamv (otter rg)
-        D_t[2, 2] -= 12.3312 * (10 * abs(xid[k, 2]))        # for blueboat
+        # D_t[2, 2] -= 12.3312 * (10 * abs(xid[k, 2]))        # for blueboat
 
-        # Rigid Body Mass and Inertia Matrix, VRX WAMV
-        # Irb = np.array([        # blueboat rg
-        #     [250.18,    0,      0,      0,    -154.36, -2.18],
-        #     [  0,    250.18,    0,    154.36,    0,    94.29],
-        #     [  0,       0,    250.18,  2.18,  -94.29,    0  ],
-        #     [  0,    154.36,   2.18,  320.43,  -0.70,  59.17],
-        #     [-154.36,   0,    -94.29,  -0.70,  584.92,  1.64],
-        #     [-2.18,   94.29,    0,     59.17,   1.64, 535.31]
-        # ])
-        # Irb = np.array([        # otter rg
-        #     [250.18,    0,      0,      0,    -50.04,      0],
-        #     [  0,    250.18,    0,    50.04,    0,     50.04],
-        #     [  0,       0,    250.18,   0,   -50.04,       0],
-        #     [  0,     50.04,    0,    235.18,  0.12,   11.00],
-        #     [-50.04,   0,    -50.04,   0.12,  474.16,   0.29],
-        #     [  0,     50.04,    0,     11.00,   0.29, 509.76]
-        # ])
-
-        # Rigid Body matrix from blueboat CAD model
-        Irb = np.array([
-            [28.63, 0, 0, 0, -17.66, -0.25],
-            [0, 28.63, 0, 17.66, 0, 10.79],
-            [0, 0, 28.63, 0.25, -10.79, 0],
-            [0, 17.66, 0.25, 13.87, -0.35, 6.55],
-            [-17.66, 0, -10.79, -0.35, 18.62, 0.13],
-            [-0.25, 10.79, 0, 6.55, 0.13, 7.13]
+        # Rigid Body Mass and Inertia Matrix, VRX WAMV (no added mass and rg)
+        Irb = np.array([        # otter rg
+            [250.18,    0,      0,      0,      0,        0],
+            [  0,    250.18,    0,      0,      0,        0],
+            [  0,       0,    250.18,   0,      0,        0],
+            [  0,       0,      0,    225.17,  0.12,   0.99],
+            [  0,       0,      0,    0.12,   454.1,   0.29],
+            [  0,       0,      0,    0.99,   0.29,  499.75]
         ])
+
+        # # Rigid Body matrix from blueboat CAD model
+        # Irb = np.array([
+        #     [28.63, 0, 0, 0, -17.66, -0.25],
+        #     [0, 28.63, 0, 17.66, 0, 10.79],
+        #     [0, 0, 28.63, 0.25, -10.79, 0],
+        #     [0, 17.66, 0.25, 13.87, -0.35, 6.55],
+        #     [-17.66, 0, -10.79, -0.35, 18.62, 0.13],
+        #     [-0.25, 10.79, 0, 6.55, 0.13, 7.13]
+        # ])
 
         M11 = Irb[0:3, 0:3]
         M12 = Irb[0:3, 3:6]
@@ -82,9 +72,9 @@ def eMPCConstraints(xid, p0, x0, param):
         Crb[3:6, 0:3] = skew(M11 @ xi_v) + skew(M12 @ xi_w)
 
         # Additional Mass Matrix, mass: 250.18kg, from vrx wamv
-        # Iam = np.diag([10.55, 375.27, 250.18, 45.03, 363.31, 849.58])
+        Iam = np.zeros((6, 6))
         # Additional Mass Matrix, mass: 28.63kg, from Blueboat CAD model
-        Iam = np.diag([5.678, 42.945, 28.63, 0.594, 2.928, 5.202])
+        # Iam = np.diag([5.678, 42.945, 28.63, 0.594, 2.928, 5.202])
 
         Mam11 = Iam[0:3, 0:3]
         Mam22 = Iam[3:6, 3:6]
@@ -122,17 +112,16 @@ def eMPCConstraints(xid, p0, x0, param):
         Bc[6:12, :] = I_inv @ np.array([
             [0, 0],
             [0, 0],
-            # [1.0, -1.0],      # vrx wamv
-            [0.285, -0.285],    # blueboat
+            [1.0, -1.0],      # vrx wamv
+            # [0.285, -0.285],    # blueboat
             [1, 1],
             [0, 0],
             [0, 0]
         ])
         
         b = (G + G2) @ x0[7:13]
-        # b[2] += 1384.8896 * (10 * abs(xid[k, 2])) * xid[k, 2]  # for vrx wamv (blueboat rg)
-        # b[2] += 1359.3388 * (10 * abs(xid[k, 2])) * xid[k, 2]  # for vrx wamv (otter rg)
-        b[2] += 12.3312 * (10 * abs(xid[k, 2])) * xid[k, 2]      # for blueboat
+
+        # b[2] += 12.3312 * (10 * abs(xid[k, 2])) * xid[k, 2]      # for blueboat
         b = -I_inv @ b
         hc = np.hstack([xid[k, :], b])
         
