@@ -34,6 +34,7 @@ class MPC(Node):
         self.path           = []      # list[ np.array([x,y]) ]
         self.i_wp           = 0       # current waypoint index
         self.reached_final  = False
+        self.last_odom      = None    # last odometry message
         self.X = []
         self.U = []
         self.Err = []
@@ -55,6 +56,9 @@ class MPC(Node):
         self.vrx_thrust_pub_l_ = self.create_publisher(Float64, '/wamv/thrusters/left/thrust', 10)
         self.vrx_thrust_pub_r_ = self.create_publisher(Float64, '/wamv/thrusters/right/thrust', 10)
         self.mavlink_thrust_pub_ = self.create_publisher(Float64MultiArray, '/mavlink/thrust_commands', 10)
+
+        # ─────── Timer-Based MPC Loop ───────
+        self.timer = self.create_timer(0.125, self.run_mpc)  # 8 Hz loop on Yui's
 
         self.get_logger().info('MPC path follower ready ✔')
 
@@ -85,14 +89,24 @@ class MPC(Node):
         self.get_logger().info(f'Received path with {self.Nsim} waypoints')
 
     def cb_odom(self, msg: Odometry):
+        self.last_odom = msg
+
+    def run_mpc(self):
+        # ───────── Check if odometry is available ─────────
+        if self.last_odom is None:
+            self.get_logger().info("Waiting for odometry data...")
+            return
+        # ───────── Check if the boat reaches final waypoint  ─────────
+        if self.reached_final:
+            self.get_logger().info("Reached the final waypoint!")
+            return
+
         # Boat states: return self.x_wrld (Orientation, Position, Angular Velocity, Velocity)
-        self.odom_transform(msg)
+        self.odom_transform(self.last_odom)
 
         # ─────── Initializee Zigzag/Circling Waypoints when not using path callback ───────
         if self.initialized_wp and self.i_wp==0:
             self.param.set_desired_posistion(self.x_wrld)
-            # self.param.X_ref = np.empty((0, 7))  # reset reference trajectory
-            # self.param.xi_ref = np.empty((0, 6))
             self.param.generate_zigzag_waypoints()
             # self.param.generate_circle_waypoints()
             self.param.waypoints2twists()        # generate twist trajectory
@@ -100,9 +114,9 @@ class MPC(Node):
             self.logger = Logger(self.Nsim, self.param.Nt)
             self.initialized_wp = False
         
-        # ─────── Checked if path is given or reach final waypoint ───────
-        if self.param.X_ref.size == 0 or self.reached_final:
-            self.get_logger().info("No path to follow or path already completed.")
+        # ─────── Checked if path is given ───────
+        if self.param.X_ref.size == 0:
+            self.get_logger().info("No path to follow.")
             return  # nothing to track
        
         # ───────── Current Waypoint ─────────
@@ -152,7 +166,6 @@ class MPC(Node):
         self.Err.append(x00)
         self.Err2.append([np.sqrt(np.sum(logm(XXerr[:3, :3])**2) / 2), *XXerr[0:3, 3]])
         self.logger.taken_time += (time.time() - start_time)
-
 
 
     # ───────── helper ─────────
