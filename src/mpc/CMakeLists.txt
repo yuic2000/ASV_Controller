@@ -67,7 +67,8 @@ add_library(mpc_communication
     ${PROJECT_SOURCE_DIR}/src/communication/path_sub.cpp
 )
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/main.cpp)
+######## mpc.cpp ########
+add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/mpc.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     mpc_lib 
@@ -78,6 +79,26 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 ament_target_dependencies(${PROJECT_NAME} 
+    rclcpp 
+    std_msgs 
+    nav_msgs
+    geometry_msgs
+    rcl_interfaces
+    Python3
+)
+
+######## main.cpp ########
+add_executable(main ${PROJECT_SOURCE_DIR}/main.cpp)
+
+target_link_libraries(main
+    mpc_lib 
+    mpc_communication
+    osqp::osqp
+    yaml-cpp
+    OpenMP::OpenMP_CXX
+)
+
+ament_target_dependencies(main 
     rclcpp 
     std_msgs 
     nav_msgs
@@ -108,9 +129,10 @@ ament_target_dependencies(sk
 ################################
 
 install(TARGETS
-  mpc
-  sk
-  DESTINATION lib/${PROJECT_NAME}
+    mpc
+    main
+    sk
+    DESTINATION lib/${PROJECT_NAME}
 )
 
 # if(BUILD_TESTING)

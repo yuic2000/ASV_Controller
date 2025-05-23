@@ -8,14 +8,12 @@ Param::Param(const std::string& yaml_path) {
 
     // Load parameters from YAML file
     std::cout << "Loading parameters from YAML file: " << yaml_path << std::endl;
-    try
-    {
+
+    try{
         loadYAML(yaml_path);     // Load cost matrices from YAML file 
         std::cout << "Loaded parameters from YAML file: " << yaml_path << std::endl;
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << "Error loading parameters: " << e.what() << '\n';
+    } catch(const std::exception& e){
+        throw std::runtime_error(std::string("Error loading parameters: ") + e.what());
     }
 
     mode = 1;                          // 1: zigzag, 2: circling
