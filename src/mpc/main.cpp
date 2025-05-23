@@ -12,7 +12,6 @@
 using namespace std;
 using namespace Eigen;
 
-
 int main(int argc, char **argv) {
     std::mt19937 gen(2); // Mersenne Twister generator
     std::uniform_real_distribution<double> dis(-0.125 * M_PI, 0.125 * M_PI); // Distribution for angles between -0.25*pi and 0.25*pi
@@ -29,7 +28,6 @@ int main(int argc, char **argv) {
     int mode = param.mode;              // 1: zigzag, 2: circling
     int Nsim = param.Nsim;              // Total simulation time + Planning time
     int Nt = param.Nt;                  // MPC planning time
-    std::cout << "Nsim: " << Nsim << ", Nt: " << Nt << std::endl;
 
     bool waypoint_by_twist = false;
 
@@ -51,8 +49,7 @@ int main(int argc, char **argv) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // // Set desired starting position
-    // x_init = VectorXd::Zero(13);                // when using boat model, start at (0, 0, 0)
+    // Set desired starting position
     param.set_desired_init_position(x_init);
 
     if (waypoint_by_twist) {
@@ -73,33 +70,7 @@ int main(int argc, char **argv) {
 
 
     Logger Logger_eMPC(Nsim, Nt);
-    ///////////////////////////////////////////////////////////////////////////////////
-    // setting initial states randomly
-    // q0: randomly rotated -0.25*pi to 0.25*pi along z-axis
-    // Quaterniond q0(AngleAxisd(dis(gen), Vector3d::UnitZ()));    // x, y, z, w
-    // Vector3d p0 = Vector3d::Zero();
-    // p0.head<2>() += (Vector2d::Random() - Vector2d::Ones()) * 2;
-    // p0(1) += 1.5;
-    // Vector3d w0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;
-    // Vector3d v0 = (Vector3d::Random() - Vector3d::Ones()) * 0.0;;
-    // v0(0) = 0.5;
-    // VectorXd q0_vec(4);
-    // q0_vec << q0.coeffs();
-    // setting initial states from python random values
-    // Vector4d q0_vec;
-    // q0_vec << 0.0, 0.0, -0.05024832, 0.99873676;    // x, y, z, w 
-    // Vector3d p0;
-    // p0 << -4.87036884, 0.24831239, 0.0;
-    // Vector3d w0;
-    // w0 << -0.0, -0.0, -0.0;
-    // Vector3d v0;
-    // v0 << 0.5, 0.0, -0.0;
-    ///////////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////////
-    // setting initial states from Ground-tryuth Odometry
-    // rclcpp::spin_some(gtodom_sub);
-    // VectorXd x_init = gtodom_sub->get_x_wrld();
-    // std::cout << "x_init: " << x_wrld.size() << std::endl;
+
     Vector4d q0_vec = x_init.segment(0, 4);
     Vector3d p0 = x_init.segment(4, 3);
     Vector3d w0 = x_init.segment(7, 3);
