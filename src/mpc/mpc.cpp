@@ -29,14 +29,12 @@ public:
                     initialized_wp_(true)
     {
         // Load parameters
-        // try {
         std::filesystem::path source_file(__FILE__);
         std::filesystem::path source_dir = source_file.parent_path();
         std::string yaml_path = source_dir.string() + "/config/mpc.yaml";
+
         param_ = std::make_shared<Param>(yaml_path);
-        // } catch (const std::exception &e) {
-        //     throw std::runtime_error(std::string("Error loading parameters: ") + e.what());
-        // }
+
 
         // Create subscribers
         path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
@@ -53,85 +51,30 @@ public:
         mavlink_thrust_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/mavlink/thrust_commands", 10);
         
         // ─────── Timer-Based MPC Loop ───────
-        timer_ = this->create_wall_timer(40ms, std::bind(&MPC::run_mpc, this));  // 25 Hz loop on Yui's
-
+        // timer_ = this->create_wall_timer(40ms, std::bind(&MPC::run_mpc, this));  // 25 Hz loop on Yui's
 
         RCLCPP_INFO(this->get_logger(), "MPC path follower ready ✔");
     }
 
-private:
-    // Callback for the path subscriber
-    void cbPath(const nav_msgs::msg::Path::SharedPtr msg)
-    {
-        // Store the entire path as a flat list of XY waypoints.
-        path_.clear();
-        for (const auto &pose_stamped : msg->poses) {
-            double x = pose_stamped.pose.position.x;
-            double y = pose_stamped.pose.position.y;
-            path_.emplace_back(x, y);
-        }
-        int Nsim = static_cast<int>(path_.size());
-        if (Nsim < 2) {
-            RCLCPP_WARN(this->get_logger(), "Received path with less than 2 waypoints");
-            return;
-        }
-
-        // Reset reference trajectories (assumed to be MatrixXd)
-        param_->X_ref.Zero(Nsim, 7);
-        param_->xi_ref.Zero(Nsim, 6);
-
-        // Build reference trajectory from waypoints
-        for (int i = 0; i < Nsim - 1; i++) {
-            Vector2d p1 = path_[i];
-            Vector2d p2 = path_[i + 1];
-            double dx = p2.x() - p1.x();
-            double dy = p2.y() - p1.y();
-            double yaw = std::atan2(dy, dx);
-
-            // Create quaternion from yaw (roll and pitch = 0)
-            AngleAxisd aa(yaw, Vector3d::UnitZ());
-            Quaterniond quat(aa);
-
-            // Each row in X_ref: [qx, qy, qz, qw, px, py, pz]
-            VectorXd row(7);
-            row << quat.x(), quat.y(), quat.z(), quat.w(), p1.x(), p1.y(), 0.0;
-
-            // Append the row to X_ref
-            param_->X_ref.row(i) = row.transpose();
-        }
-
-        // Generate twist trajectory from waypoints
-        param_->waypoints2twists();
-
-        // Initialize the logger (assumes Logger(int Nsim, int Nt) exists)
-        logger_ = std::make_shared<Logger>(Nsim, param_->Nt);
-
-        i_wp_ = 0;
-        reached_final_ = false;
-        RCLCPP_INFO(this->get_logger(), "Received path with %d waypoints", Nsim);
-    }
-
-    // Callback for the odometry subscriber
-    void cbOdom(const nav_msgs::msg::Odometry::SharedPtr msg)
-    {
-        last_odom_ = msg;
-    }
-    void run_mpc()
-    {
-        // Check if the odometry message is received
-        if (!last_odom_){
-            RCLCPP_INFO(this->get_logger(), "No odometry data received yet");
-            return;
-        }
+    // ───────── MPC Loop ─────────
+    void run_mpc() {
         if (reached_final_) {
             RCLCPP_INFO(this->get_logger(), "Path already completed");
             return;
         }
 
-        // Boat states: return x_wrld_ (Orientation, Position, Angular Velocity, Velocity)
-        odomTransform(last_odom_);
+        nav_msgs::msg::Odometry odom_copy;
+        {
+            std::lock_guard<std::mutex> lock(odom_mutex_);
+            if (!last_odom_) {
+                RCLCPP_INFO(this->get_logger(), "No odometry data received yet");
+                return;
+            }
+            odom_copy = *last_odom_;  // safe copy, unlocks after this scope
+        }
+        odomTransform(odom_copy);
 
-        // Initialize Zigzag/Circling waypoints if needed.
+        // ───────── Initialize Zigzag/Circling waypoints if needed. ─────────
         if (initialized_wp_ && i_wp_ == 0) {
             param_->set_desired_init_position(x_wrld_);
             param_->generate_zigzag_waypoints();
@@ -142,13 +85,13 @@ private:
             initialized_wp_ = false;
         }
 
-        // Check if there is a valid path
+        // ───────── Check if there is a valid path ─────────
         if (param_->X_ref.size() == 0) {
             RCLCPP_INFO(this->get_logger(), "No path to follow.");
             return;
         }
 
-        // Current waypoint from the reference trajectory
+        // ───────── Current waypoint from the reference trajectory ─────────
         VectorXd X_ref_rt = param_->X_ref.row(i_wp_).transpose();
         const int Nt = param_->Nt;
         MatrixXd xi_ref_rt = param_->xi_ref.block(i_wp_, 0, Nt, param_->xi_ref.cols());
@@ -158,8 +101,6 @@ private:
             reached_final_ = true;
             stopBoat();
             RCLCPP_INFO(this->get_logger(), "Finished path 🎉");
-
-            // (Assumed Logger members are filled during runtime; you can further process logger data as needed)
             plot_mpc(*logger_, *param_);
             return;
         }
@@ -170,7 +111,7 @@ private:
         Vector2d u;
         u = eMPC(x_wrld_, X_ref_rt, xi_ref_rt, *param_);
 
-        // Publish thrust commands
+        // ───────── Publish thrust commands ─────────
         std_msgs::msg::Float64 msg_right;
         msg_right.data = u(0);
         right_thrust_pub_->publish(msg_right);
@@ -217,6 +158,61 @@ private:
         i_wp_++;
     }
 
+private:
+    // Callback for the path subscriber
+    void cbPath(const nav_msgs::msg::Path::SharedPtr msg)
+    {
+        // ───────── Store the entire path as a flat list of XY waypoints. ─────────
+        path_.clear();
+        for (const auto &pose_stamped : msg->poses) {
+            double x = pose_stamped.pose.position.x;
+            double y = pose_stamped.pose.position.y;
+            path_.emplace_back(x, y);
+        }
+        int Nsim = static_cast<int>(path_.size());
+        if (Nsim < 2) {
+            RCLCPP_WARN(this->get_logger(), "Received path with less than 2 waypoints");
+            return;
+        }
+
+        // ───────── Build reference trajectories ─────────
+        param_->X_ref.Zero(Nsim, 7);
+        param_->xi_ref.Zero(Nsim, 6);
+
+        for (int i = 0; i < Nsim - 1; i++) {
+            Vector2d p1 = path_[i];
+            Vector2d p2 = path_[i + 1];
+            double dx = p2.x() - p1.x();
+            double dy = p2.y() - p1.y();
+            double yaw = std::atan2(dy, dx);
+
+            // Create quaternion from yaw (roll and pitch = 0)
+            AngleAxisd aa(yaw, Vector3d::UnitZ());
+            Quaterniond quat(aa);
+
+            // Each row in X_ref: [qx, qy, qz, qw, px, py, pz]
+            VectorXd row(7);
+            row << quat.x(), quat.y(), quat.z(), quat.w(), p1.x(), p1.y(), 0.0;
+
+            param_->X_ref.row(i) = row.transpose();
+        }
+
+        // Generate twist trajectory from waypoints
+        param_->waypoints2twists();
+
+        logger_ = std::make_shared<Logger>(Nsim, param_->Nt);
+        i_wp_ = 0;
+        reached_final_ = false;
+        RCLCPP_INFO(this->get_logger(), "Received path with %d waypoints", Nsim);
+    }
+
+    // Callback for the odometry subscriber
+    void cbOdom(const nav_msgs::msg::Odometry::SharedPtr msg)
+    {
+        std::lock_guard<std::mutex> lock(odom_mutex_);
+        last_odom_ = msg;
+    }
+
     // Stop the boat by publishing zeros to the thruster topics.
     void stopBoat()
     {
@@ -232,31 +228,31 @@ private:
     }
 
     // Transform the incoming odometry message to create a world state vector.
-    void odomTransform(const nav_msgs::msg::Odometry::SharedPtr msg)
+    void odomTransform(const nav_msgs::msg::Odometry &msg)
     {
         // Position (world frame)
-        double p_x = msg->pose.pose.position.x;
-        double p_y = msg->pose.pose.position.y;
-        double p_z = msg->pose.pose.position.z;
+        double p_x = msg.pose.pose.position.x;
+        double p_y = msg.pose.pose.position.y;
+        double p_z = msg.pose.pose.position.z;
         Vector3d p_odom(p_x, p_y, p_z);
 
-        // Orientation (quaternion from odometry)
-        double q_x = msg->pose.pose.orientation.x;
-        double q_y = msg->pose.pose.orientation.y;
-        double q_z = msg->pose.pose.orientation.z;
-        double q_w = msg->pose.pose.orientation.w;
+        // Orientation (world frame)
+        double q_x = msg.pose.pose.orientation.x;
+        double q_y = msg.pose.pose.orientation.y;
+        double q_z = msg.pose.pose.orientation.z;
+        double q_w = msg.pose.pose.orientation.w;
         Vector4d q_odom(q_x, q_y, q_z, q_w); // x, y , z, w
 
         // Linear velocity (body frame)
-        double v_x = msg->twist.twist.linear.x;
-        double v_y = msg->twist.twist.linear.y;
-        double v_z = msg->twist.twist.linear.z;
+        double v_x = msg.twist.twist.linear.x;
+        double v_y = msg.twist.twist.linear.y;
+        double v_z = msg.twist.twist.linear.z;
         Vector3d v_body(v_x, v_y, v_z);
 
         // Angular velocity (body frame)
-        double w_x = msg->twist.twist.angular.x;
-        double w_y = msg->twist.twist.angular.y;
-        double w_z = msg->twist.twist.angular.z;
+        double w_x = msg.twist.twist.angular.x;
+        double w_y = msg.twist.twist.angular.y;
+        double w_z = msg.twist.twist.angular.z;
         Vector3d w_body(w_x, w_y, w_z);
 
         // Build x_wrld: [q_wrld, p_wrld, w_body, v_body] (total length 13)
@@ -274,7 +270,7 @@ private:
     int i_wp_;
     bool reached_final_;
     bool initialized_wp_;
-    int solver_state_;  // Note: simplified solver state
+
     // x_wrld_: state vector concatenating quaternion (4), position (3),
     // angular velocity (3) and linear velocity (3)
     VectorXd x_wrld_ = VectorXd::Zero(13);
@@ -285,6 +281,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_thrust_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_thrust_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr mavlink_thrust_pub_;
+    std::mutex odom_mutex_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
@@ -292,7 +289,20 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<MPC>();
-    rclcpp::spin(node);
+    // rclcpp::spin(node);
+    // rclcpp::shutdown();
+    
+    rclcpp::Rate rate(20);  // ~20 Hz = 50 ms, slightly slower than MPC time
+
+    while (rclcpp::ok()) {
+        rclcpp::spin_some(node);  // update latest odometry
+
+        node->run_mpc();          // MPC control loop
+
+        rate.sleep();
+    }
+
     rclcpp::shutdown();
+    
     return 0;
 }
