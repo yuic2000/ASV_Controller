@@ -67,7 +67,6 @@ void plot_mpc(const Logger& logger, const Param& param) {
     // Real trajectory
     std::vector<double> x(logger.Err2.cols());
     std::vector<double> y(logger.Err2.cols());
-
     for (int i = 0; i < logger.Err2.cols(); ++i) {
         x[i] = (logger.X(4, i));
         y[i] = (logger.X(5, i));
