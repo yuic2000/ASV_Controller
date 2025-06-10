@@ -1,0 +1,86 @@
+#pragma once
+
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <iostream>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/unsupported/Eigen/MatrixFunctions>
+#include "utils/LieGroup.h"
+
+using namespace Eigen;
+using namespace std;
+
+class Param {
+public:
+    int mode;                   // 1: zigzag, 2: circling
+    double Hz;                  // MPC frequency
+    double dt;               
+    int Nx;                    
+    int Nu;                     
+    int Nt;                    
+    int Nsim; 
+    double V_c;
+    double beta_c;             
+    MatrixXd I;
+    VectorXd xmax;
+    VectorXd xmin;
+    VectorXd umax;
+    VectorXd umin;
+
+    // Initial states
+    Vector4d q0_ref;    // desired quaternion
+    Vector3d p0_ref;    // desired position
+    Vector3d w0_ref;    // desired yaw velocity
+    Vector3d v0_ref;    // desired surge velocity
+    // Reference trajectory setting
+    VectorXd x0_ref;
+    VectorXd xid_ref;
+    MatrixXd X_ref;
+    MatrixXd xi_ref;
+    Matrix4d init_pose;
+
+    // ROS Topics
+    std::string path_topic;
+    std::string odom_topic;
+    std::string pose_topic;
+    std::string twist_topic;
+
+    // MPC Horizon and Parameters
+    double goal_tol;        // m
+    double v_surge;         // m/s
+    double yaw_rate;        // rad/s
+    double max_thrust;      // N
+    double min_thrust;      // N
+
+    // Design cost function parameters
+    VectorXd diag_values_cost_P;      // Diagonal values for the cost matrices for P
+    VectorXd diag_values_cost_Q;      // Diagonal values for the cost matrices for Q
+    MatrixXd P;
+    MatrixXd Q;
+    MatrixXd R;
+
+    // Constructor
+    Param(const std::string& yaml_path);
+
+    void loadYAML(const std::string& yaml_path);
+
+    void set_desired_init_position(VectorXd& x_init);
+    void set_reference_trajectory();
+    void generate_zigzag_waypoints();
+    void generate_circle_waypoints();
+    void waypoints2twists();
+
+    void StationKeeping();
+};
+class Logger {
+    public:
+        // Member variables
+        MatrixXd X;
+        MatrixXd Err;
+        MatrixXd U;
+        MatrixXd Err2;
+        double taken_time;
+    
+        // Constructor
+        Logger(int Nsim, int Nt);
+    };

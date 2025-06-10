@@ -1,0 +1,20 @@
+build/
+lib/
+install/
+
+# VS Code
+.vscode
+
+# MAC OS
+.DS_Store
+**/.DS_Store
+
+# logs
+log/
+log/*.txt
+log/*/*.txt
+
+
+# python 
+__pycache__/
+*.pyc
