@@ -206,6 +206,7 @@ public:
         //     stopBoat();
         //     reached_final_ = true;
         //     plot_mpc(*logger_, *param_);
+        //     return;
         // }
         
     }
@@ -239,7 +240,6 @@ private:
 
         // Process Path to Dense Waypoints (fixed step)
         PathProcessing();
-        // Nsim = static_cast<int>(dense_path_.size());
         RCLCPP_INFO(this->get_logger(), "Received path with %d waypoints", PathSize);
 
         if (PathSize < 2) {
@@ -435,7 +435,7 @@ private:
 
         // Define the number of interpolation points
         int total_sim = static_cast<int>(
-                std::ceil((total_distance / param_->v_surge + param_->Nt * param_->dt) / param_->dt)
+                std::ceil((total_distance / param_->v_surge) / param_->dt)
             );
         for (size_t i = 0; i < original_path_.size() - 1; ++i) {
             const auto& p1 = original_path_[i];
