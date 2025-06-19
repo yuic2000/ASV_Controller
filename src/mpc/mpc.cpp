@@ -78,7 +78,7 @@ public:
     // ───────── MPC Loop ─────────
     void run_mpc() {
         if (reached_final_) {
-            RCLCPP_INFO(this->get_logger(), "Path already completed");
+            RCLCPP_INFO(this->get_logger(), "Path already completed, Awaiting for new path.");
             return;
         }
         // ───────── 1. if using "/gt_pose" and "/wamv/inekf_odom_correction/twist" ─────────
@@ -501,6 +501,8 @@ void ctrlc(int)
 
 int main(int argc, char **argv)
 {
+    Eigen::setNbThreads(10); // Use 10 threads
+
     rclcpp::init(argc, argv);
     auto node = std::make_shared<MPC>();
     

@@ -23,7 +23,8 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
     // D.diagonal() << -12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0(9))), -77.5544, 0, -250.3037;     // for blueboat model, 28.63 kg
     
     MatrixXd I_inv = I.inverse();
-    
+
+    #pragma omp parallel for 
     for (int k = 0; k < Nt; ++k) {
         MatrixXd D_t = D;
         // D_t(2, 2) -= 12.3312 * (10 * abs(xid(k, 2)));           // for blueboat model
@@ -119,7 +120,7 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
     }
     A.block(Nt * Nx, 0, Nx, Nx) = MatrixXd::Identity(Nx, Nx);
     
-    
+    #pragma omp parallel for 
     for (int k = 0; k < Nt; ++k) {
         A.block(Noff + Nu * k, Noff + Nu * k, Nu, Nu) = MatrixXd::Identity(Nu, Nu);
     }

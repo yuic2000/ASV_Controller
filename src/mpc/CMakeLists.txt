@@ -45,6 +45,7 @@ include_directories( SYSTEM
     ${rcl_interfaces_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS} 
     ${Python3_INCLUDE_DIRS}
+    ${Python3_NumPy_INCLUDE_DIRS}
     ${PROJECT_SOURCE_DIR}/include
 )
 

@@ -16,8 +16,8 @@ int main(int argc, char **argv) {
     std::mt19937 gen(2); // Mersenne Twister generator
     std::uniform_real_distribution<double> dis(-0.125 * M_PI, 0.125 * M_PI); // Distribution for angles between -0.25*pi and 0.25*pi
     
-    // Eigen::setNbThreads(6); // Use 6 threads
-    omp_set_num_threads(8); // Control OpenMP thread count
+    Eigen::setNbThreads(10); // Use 6 threads
+    // omp_set_num_threads(10); // Control OpenMP thread count
 
 
     std::filesystem::path source_file(__FILE__);
