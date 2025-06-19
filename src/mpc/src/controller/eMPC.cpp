@@ -31,41 +31,43 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
            x0.segment(7, 6);
 
 
-    // eMPCConstraints
+    // ------ eMPCConstraints (A is ~60% sparse) ------ 
     MatrixXd A = MatrixXd::Zero(n_total, n_total);          // 1412 x 1412
     VectorXd bmin = VectorXd::Zero(n_total);                // 1412
     VectorXd bmax = VectorXd::Zero(n_total);                // 1412
     eMPCConstraints(A, bmin, bmax, xid, p0, x0, param);     // find A, bmin, bmax via eMPCConstraints
 
 
-    // eMPCCost
-    MatrixXd M = MatrixXd::Zero(n_total, n_total);          // 1412 x 1412
+    // ------ eMPCCost (M is ~90% sparse, directly construct matrix in triplets rather than dense matrix M) ------
+    // MatrixXd M = MatrixXd::Zero(n_total, n_total);          // 1412 x 1412
+    std::vector<Triplet<double>> M_triplets;
+    M_triplets.reserve(n_total * 5);                        // Reserve space for non-zero elements
     VectorXd q = VectorXd::Zero(n_total);                   // 1412
-    eMPCCost(M, q, xid, param);                             // find M, q via eMPCCost
+    // eMPCCost(M, q, xid, param);                          // find M, q via eMPCCost, M is dense matrix
+    eMPCCostSparse(M_triplets, q, xid, param);              // find M, q via eMPCCostSparse, M is sparse matrix in triplets
 
-
-    // Setup OSQP problem
+    // ------ Setup OSQP problem ------
     OSQPSolver*   solver   = nullptr;
-    OSQPSettings* settings = (OSQPSettings *)malloc(sizeof(OSQPSettings));
+    OSQPSettings *settings = (OSQPSettings *)malloc(sizeof(OSQPSettings));
     osqp_set_default_settings(settings);
     settings->verbose = false;
     // settings->max_iter = 1500;
     settings->eps_abs = 1e-2;
     settings->eps_rel = 1e-2;
     settings->polishing = true;
-    // settings->time_limit = 3.8e-2;        // 0.04s, 40 ms
-    settings->time_limit = 4.7e-2;        // 0.05s, 50 ms
-    // settings->adaptive_rho = false;
+    settings->time_limit = 3.5e-2;        // 0.05s, 50 ms, should test in Jetson
 
     OSQPInt exitflag = 0;
 
-    // Convert matrices to sparse matrices
-    M = M.triangularView<Eigen::Upper>();
 
-    SparseMatrix<double> M_sparse = M.sparseView(0.0, 1e-6);         // 1412 x 1412
-    SparseMatrix<double> A_sparse = A.sparseView(0.0, 1e-6);         // 1412 x 1412
+    // ------ Convert matrices to Sparse Matrices, A and M ------ 
+    // (M is ~90% sparse, directly use triplets in eMPCCostSparse rather than dense matrix M)
+    SparseMatrix<double> M_sparse(n_total, n_total);
+    M_sparse.setFromTriplets(M_triplets.begin(), M_triplets.end());
+    
+    SparseMatrix<double> A_sparse = A.sparseView(1e-9);         // 1412 x 1412
 
-    // Populate OSQPData with M_sparse, q, A_sparse, l, u
+    // ------ Populate OSQPData with M_sparse, q, A_sparse, l, u ------
     OSQPCscMatrix P_csc;
     OSQPCscMatrix A_csc;
     eigen2CscMatrix(P_csc, M_sparse);       
