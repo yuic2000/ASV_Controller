@@ -1,7 +1,6 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import Float64MultiArray  # Use an array message for thrust commands
-from pymavlink import mavutil
+from std_msgs.msg import Float64MultiArray, Int32MultiArray
 import time
 
 class IntegratedMavlinkController(Node):
@@ -21,9 +20,11 @@ class IntegratedMavlinkController(Node):
             self.thrust_callback,
             10
         )
+        # PWM Publisher for logging
+        self.Mavlink_pub = self.create_publisher(Int32MultiArray, '/mavlink/thrust_PWM', 10)
         
         # Create a timer to send RC commands periodically (100ms interval)
-        self.create_timer(0.1, self.send_rc_commands)
+        # self.create_timer(0.05, self.send_rc_commands)
 
     def _init_mavlink(self):
         """Initialize MAVLink connection."""
@@ -65,27 +66,32 @@ class IntegratedMavlinkController(Node):
 
     def thrust_callback(self, msg):
         """Callback to handle thrust commands."""
+        start = time.time()
         if len(msg.data) != 2:
-            self.get_logger().error('Invalid command format, expected [left_thrust, right_thrust]')
+            self.get_logger().error('Invalid command format, expected [right_thrust, left_thrust]')
             return
             
-        right_thrust = msg.data[0] / 9.81
-        left_thrust = msg.data[1] / 9.81
+        self.right_thrust = msg.data[0] / 9.81      # Newton to kgF
+        self.left_thrust = msg.data[1] / 9.81       # Newton to kgF
         
         # Convert thrust to PWM
-        left_pwm = self._thrust_to_pwm(left_thrust)
-        right_pwm = self._thrust_to_pwm(right_thrust)
+        self.left_pwm = self._thrust_to_pwm(self.left_thrust)
+        self.right_pwm = self._thrust_to_pwm(self.right_thrust)
         
         # Calculate throttle and steering
-        throttle, steering = self._calculate_controls(left_pwm, right_pwm)
+        self.throttle, self.steering = self._calculate_controls()
         
         # Update RC channel values
-        self._update_channels(steering, throttle)
+        self._update_channels(self.steering, self.throttle)
+        self.send_rc_commands()             # Send RC commands to the vehicle
+        self.publish_pwm()                  # publish PWM values for logging
         
         self.get_logger().info(
-            f'Received thrust commands: left={left_thrust:.2f}, right={right_thrust:.2f} => '
-            f'PWM: throttle={throttle}, steering={steering}'
+            f'Thrust commands: left={self.left_thrust:.2f}, right={self.right_thrust:.2f} (kgF)\n'
+            f'PWM: left={self.left_pwm}, right={self.right_pwm}\n'
+            f'Channels: throttle={self.throttle}, steering={self.steering}\n'
         )
+        self.get_logger().info(f'Callback execution time: {time.time() - start:.4f} seconds')
 
     def _thrust_to_pwm(self, thrust):
         """Convert thrust force to PWM using calibration data."""
@@ -113,10 +119,10 @@ class IntegratedMavlinkController(Node):
                 return int(x0 + (thrust - y0) * (x1 - x0) / (y1 - y0))
         return 1500
 
-    def _calculate_controls(self, left_pwm, right_pwm):
+    def _calculate_controls(self):
         """Calculate throttle and steering from PWM values."""
-        throttle = (left_pwm + right_pwm) // 2
-        steering = 1500 - (right_pwm - left_pwm) // 2
+        throttle = (self.left_pwm + self.right_pwm) // 2
+        steering = 1500 - (self.right_pwm - self.left_pwm) // 2
         return throttle, steering
 
     def _update_channels(self, steering, throttle):
@@ -134,6 +140,17 @@ class IntegratedMavlinkController(Node):
             self.master.target_component,
             *self.rc_channel_values
         )
+
+    def publish_pwm(self):
+        """Publish PWM signals."""
+        msg = Int32MultiArray()
+        msg.data[0] = int(self.right_thrust * 1000)     # gF
+        msg.data[1] = int(self.left_thrust * 1000)      # gF
+        msg.data[2] = self.right_pwm
+        msg.data[3] = self.left_pwm
+        msg.data[4] = self.throttle
+        msg.data[5] = self.steering
+        self.Mavlink_pub.publish(msg)
 
     def stop_motors(self):
         """Safely stop all motors."""
