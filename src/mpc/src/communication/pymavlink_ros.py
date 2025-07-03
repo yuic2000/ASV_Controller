@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray, Int32MultiArray
+from pymavlink import mavutil
 import time
 
 class IntegratedMavlinkController(Node):
@@ -144,6 +145,7 @@ class IntegratedMavlinkController(Node):
     def publish_pwm(self):
         """Publish PWM signals."""
         msg = Int32MultiArray()
+        msg.data = [0] * 6
         msg.data[0] = int(self.right_thrust * 1000)     # gF
         msg.data[1] = int(self.left_thrust * 1000)      # gF
         msg.data[2] = self.right_pwm
@@ -157,6 +159,7 @@ class IntegratedMavlinkController(Node):
         try:
             self._update_channels(1500, 1500)  # Reset to neutral
             self.send_rc_commands()
+            self.publish_pwm()                  # publish PWM values for logging
             self.get_logger().info('Motors stopped successfully')
         except Exception as e:
             self.get_logger().error(f'Failed to stop motors: {str(e)}')
@@ -165,6 +168,7 @@ class IntegratedMavlinkController(Node):
         """Stop motors when the node is destroyed."""
         self._update_channels(1500, 1500)
         self.send_rc_commands()
+        self.publish_pwm()                  # publish PWM values for logging
         self.get_logger().info('Motors safely stopped')
 
 def main(args=None):
