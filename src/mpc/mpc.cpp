@@ -77,10 +77,10 @@ public:
 
     // ───────── MPC Loop ─────────
     void run_mpc() {
-        if (reached_final_) {
-            RCLCPP_INFO(this->get_logger(), "Path already completed, Awaiting for new path.");
-            return;
-        }
+        // if (reached_final_) {
+        //     RCLCPP_INFO(this->get_logger(), "Path already completed, Awaiting for new path.");
+        //     return;
+        // }
         // ───────── 1. if using "/gt_pose" and "/wamv/inekf_odom_correction/twist" ─────────
         geometry_msgs::msg::PoseStamped pose_copy;
         {
@@ -137,13 +137,13 @@ public:
         MatrixXd xi_ref_rt = param_->xi_ref.block(i_wp_, 0, Nt, param_->xi_ref.cols());
 
         // ───────── Check if reached the final waypoint ─────────
-        if (i_wp_ >= param_->X_ref.rows() - Nt) {
-            reached_final_ = true;
-            stopBoat();
-            RCLCPP_INFO(this->get_logger(), "Finished path 🎉");
-            plot_mpc(*logger_, *param_);
-            return;
-        }
+        // if (i_wp_ >= param_->X_ref.rows() - Nt) {
+        //     reached_final_ = true;
+        //     stopBoat();
+        //     RCLCPP_INFO(this->get_logger(), "Finished path 🎉");
+        //     plot_mpc(*logger_, *param_);
+        //     return;
+        // }
 
         auto start = std::chrono::steady_clock::now();
 
@@ -195,19 +195,24 @@ public:
 
         auto end = std::chrono::steady_clock::now();
         logger_->taken_time += std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
-        i_wp_++;
+
+        // i_wp_++;
         
         Matrix4d goalErr_mat = X0.inverse() * Xd_goal;
+        Matrix4d goalErr_mat_path = X0.inverse() * Xd_path_goal;
         double goalErr = std::sqrt(std::pow(goalErr_mat(0, 3), 2) + std::pow(goalErr_mat(1, 3), 2) + std::pow(goalErr_mat(2, 3), 2));
-        RCLCPP_INFO(this->get_logger(), "Goal error: %f", goalErr);
+        double goalErr_path = std::sqrt(std::pow(goalErr_mat_path(0, 3), 2) + std::pow(goalErr_mat_path(1, 3), 2) + std::pow(goalErr_mat_path(2, 3), 2));
+        RCLCPP_INFO(this->get_logger(), "Goal error: %f, Path Goal error: %f", goalErr, goalErr_path);
  
-        // if(goalErr < param_->goal_tol || i_wp_ >= param_->X_ref.rows() - Nt) {
-        //     RCLCPP_INFO(this->get_logger(), "Goal reached! Stopping the boat.");
-        //     stopBoat();
-        //     reached_final_ = true;
-        //     plot_mpc(*logger_, *param_);
-        //     return;
-        // }
+        if(i_wp_ >= param_->X_ref.rows() - Nt - 1) {
+            i_wp_ = param_->X_ref.rows() - Nt - 1;  // Stay at the last waypoint
+
+            RCLCPP_INFO(this->get_logger(), "Goal reached! Station Keeping.");
+            reached_final_ = true;
+        }
+        else{
+            i_wp_++;
+        }
         
     }
 
@@ -271,6 +276,10 @@ private:
         for (int i = PathSize; i < Nsim; i++) {
             param_->X_ref.row(i) = param_->X_ref.row(PathSize - 1);
         }
+
+        // Path Goal States
+        x_path_goal = param_->X_ref.row(PathSize - 1).transpose();
+        Xd_path_goal = pose_to_T_matrix(x_path_goal);
 
         // Generate twist trajectory from waypoints
         param_->waypoints2twists();
@@ -473,8 +482,10 @@ private:
     // x_wrld_: state vector concatenating quaternion (4), position (3),
     // angular velocity (3) and linear velocity (3)
     VectorXd x_wrld_ = VectorXd::Zero(13);
-    VectorXd x_goal = VectorXd::Zero(13);  // goal state vector
-    Matrix4d Xd_goal = Matrix4d::Identity();  // goal state in world frame
+    VectorXd x_goal = VectorXd::Zero(13);       // goal state vector from the GOAL subscriber
+    Matrix4d Xd_goal = Matrix4d::Identity();    // goal state in world frame from the GOAL subscriber
+    VectorXd x_path_goal = VectorXd::Zero(13);       // goal state vector from Path Processing
+    Matrix4d Xd_path_goal = Matrix4d::Identity();    // goal state in world frame from Path Processing
 
     // Subscribers and publishers
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
