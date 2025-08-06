@@ -31,20 +31,22 @@ class GtOdomSubscriberNode(Node):
         ])
 
         self.gtodom_sub = self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 1000)
-        self.pose_sub = self.create_subscription(PoseStamped, self.pose_topic, self.pose_callback, 10)
-        self.twist_sub = self.create_subscription(TwistStamped, self.twist_topic, self.twist_callback, 10)
+        self.pose_sub = self.create_subscription(PoseStamped, self.pose_topic, self.pose_callback, 100)
+        self.twist_sub = self.create_subscription(TwistStamped, self.twist_topic, self.twist_callback, 100)
 
         self.x_wrld = None
         self.x_odom = None
+        self.odom_list_pose = []
         self.odom_list_twist = []
+        self.pose_list = []
         self.twist_list = []
-        self.yaw_pose = None
+        self.heading = None
 
 
     def odom_callback(self, msg):
         # position (map frame)
-        p_x = msg.pose.pose.position.x
-        p_y = msg.pose.pose.position.y
+        p_x = msg.pose.pose.position.x + 532
+        p_y = msg.pose.pose.position.y - 162
         p_z = msg.pose.pose.position.z
         self.p_odom = np.array([p_x, p_y, p_z])
 
@@ -80,6 +82,7 @@ class GtOdomSubscriberNode(Node):
 
         self.x_wrld = np.concatenate([self.q_wrld, self.p_wrld, self.w_body, self.v_body], axis=None)
 
+        self.odom_list_pose.append(np.array([msg.header.stamp.sec + msg.header.stamp.nanosec*1e-9, *self.q_wrld, *self.p_wrld]))
         self.odom_list_twist.append(np.array([msg.header.stamp.sec + msg.header.stamp.nanosec*1e-9, *self.w_body, *self.v_body]))
 
     def get_x_wrld(self):
@@ -100,21 +103,21 @@ class GtOdomSubscriberNode(Node):
         p_z = msg.pose.position.z
         self.p_pose = np.array([p_x, p_y, p_z])
 
-        self.yaw_pose = np.arctan2(
+        self.heading = np.arctan2(
             2 * (self.q_pose[3] * self.q_pose[2] + self.q_pose[0] * self.q_pose[1]),
             1 - 2 * (self.q_pose[1]**2 + self.q_pose[2]**2)
         )
 
+        self.pose_list.append(np.array([msg.header.stamp.sec + msg.header.stamp.nanosec*1e-9, *self.q_pose, *self.p_pose]))
     
     def twist_callback(self, msg):
-        if self.yaw_pose is None:
-            self.get_logger().warn("yaw_pose is not initialized, skipping twist callback.")
+        if self.heading is None:
+            self.get_logger().warn("heading is not initialized, skipping twist callback.")
             return
-        # Extract yaw (rotation along z-axis) from quaternion
-        yaw = self.yaw_pose
+
         # linear velocity (body frame)
-        v_x = msg.twist.linear.x * np.cos(yaw) + msg.twist.linear.y * np.sin(yaw)
-        v_y = msg.twist.linear.y * np.cos(yaw) - msg.twist.linear.x * np.sin(yaw)
+        v_x = msg.twist.linear.x * np.cos(self.heading) + msg.twist.linear.y * np.sin(self.heading)
+        v_y = msg.twist.linear.y * np.cos(self.heading) - msg.twist.linear.x * np.sin(self.heading)
         # v_x = msg.twist.linear.x
         # v_y = msg.twist.linear.y
         v_z = msg.twist.linear.z
@@ -134,35 +137,48 @@ class GtOdomSubscriberNode(Node):
 
     def plot_twist_btw_gt_and_drift(self):
 
-        odom_array = np.array(self.odom_list_twist)  # time, wx, wy, wz, vx, vy, vz
-        twist_array = np.array(self.twist_list)      # time, wx, wy, wz, vx, vy, vz
+        odom_twist_array = np.array(self.odom_list_twist)   # time, wx, wy, wz, vx, vy, vz
+        twist_array = np.array(self.twist_list)             # time, wx, wy, wz, vx, vy, vz
 
-        print("odom_array shape:", odom_array.shape)
-        print("twist_array shape:", twist_array.shape)
+        odom_pose_array = np.array(self.odom_list_pose)    # time, qx, qy, qz, qw, px, py, pz
+        pose_array = np.array(self.pose_list)               # time, qx, qy, qz, qw, px, py, pz
+
+        print("odom_twist_array shape:", odom_twist_array.shape)
+        print("DRIFT twist_array shape:", twist_array.shape)
+        print("odom_pose_array shape:", odom_pose_array.shape)
+        print("DRIFT pose_array shape:", pose_array.shape)
         
-        plt.subplot(1, 2, 1)
-        plt.scatter(odom_array[:, 0], odom_array[:, 4], label='Ground Truth Vx', s=10)
-        plt.scatter(twist_array[:, 0], twist_array[:, 4], label='DRIFT Vx in Body Frame', s=10)
+        plt.subplot(2, 2, 1)
+        plt.scatter(twist_array[:, 0], twist_array[:, 4], label='DRIFT Vx in Body Frame', s=5, c='orange')
+        plt.scatter(odom_twist_array[:, 0], odom_twist_array[:, 4], label='Ground Truth Vx', s=5, c='blue')
         plt.title('Vx from Ground Truth Twist and DRIFT Twist')
         plt.legend()
         plt.xlabel('Time (s)')
         plt.ylabel('Vx Twist')
 
-        plt.subplot(1, 2, 2)
-        plt.scatter(odom_array[:, 0], odom_array[:, 5], label='Ground Truth Vy', s=10)
-        plt.scatter(twist_array[:, 0], twist_array[:, 5], label='DRIFT Vy in Body Frame', s=10)
+        plt.subplot(2, 2, 2)
+        plt.scatter(twist_array[:, 0], twist_array[:, 5], label='DRIFT Vy in Body Frame', s=5, c='orange')
+        plt.scatter(odom_twist_array[:, 0], odom_twist_array[:, 5], label='Ground Truth Vy', s=5, c='blue')
         plt.title('Vy from Ground Truth Twist and DRIFT Twist')
         plt.legend()
         plt.xlabel('Time (s)')
         plt.ylabel('Vy Twist')
 
-        # plt.subplot(1, 3, 3)
-        # plt.scatter(odom_array[:, 0], odom_array[:, 3], label='Ground Truth Wz', s=5)
-        # plt.scatter(twist_array[:, 0], twist_array[:, 3], label='DRIFT Wz in Body Frame', s=5)
-        # plt.title('Vy btw Ground Truth Twist and DRIFT Twist')
-        # plt.legend()
-        # plt.xlabel('Time (s)')
-        # plt.ylabel('Wz Twist')
+        plt.subplot(2, 2, 3)
+        plt.scatter(twist_array[:, 0], twist_array[:, 3], label='DRIFT Wz in Body Frame', s=5, c='orange')
+        plt.scatter(odom_twist_array[:, 0], odom_twist_array[:, 3], label='Ground Truth Wz', s=5, c='blue')
+        plt.title('Vy btw Ground Truth Twist and DRIFT Twist')
+        plt.legend()
+        plt.xlabel('Time (s)')
+        plt.ylabel('Wz Twist')
+
+        plt.subplot(2, 2, 4)
+        plt.scatter(pose_array[:, 4], pose_array[:, 5], label='DRIFT Pose', s=5, c='orange')
+        plt.scatter(odom_pose_array[:, 4], odom_pose_array[:, 5], label='Ground Truth Pose', s=5, c='blue')
+        plt.title('Pose btw Ground Truth and DRIFT')
+        plt.legend()
+        plt.xlabel('Position X (m)')
+        plt.ylabel('Position Y (m)')
 
         plt.show()
 
@@ -170,8 +186,10 @@ class GtOdomSubscriberNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     Odom_sub = GtOdomSubscriberNode()
-
+    print("start recording")
     for i in range(5000):
+        if i % 100 ==0:
+    	    print(i)
         rclpy.spin_once(Odom_sub)
 
     Odom_sub.plot_twist_btw_gt_and_drift()
