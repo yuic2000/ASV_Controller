@@ -33,9 +33,8 @@ class ESC_log():
         self.voltage = 0.0
         self.driver_temp = 0
         # self.motor_temp = 0
-        self.error_code = 0
+        self.error_code = 0xFFFF
         self.online_timer = 5
-
 
 class DualESCController(Node):
     def __init__(self):
@@ -84,11 +83,7 @@ class DualESCController(Node):
         if self.ESCState != ESCState.RUN:
             return
 
-        try:
-            self.publish_thrust(msg)
-
-        except Exception as e:
-            self.get_logger().error(f"Modbus write error: {e}")
+        self.publish_thrust(msg)
 
     def thrust_to_cmd(self, thrust_cmd):
         """Map thrust command to ESC register value."""
@@ -225,16 +220,20 @@ class DualESCController(Node):
 
         right_val = self.thrust_to_cmd(right_thrust)
         left_val = self.thrust_to_cmd(left_thrust)
+        
+        try: 
+            self.right_esc.write_register(0x003A, right_val, functioncode=6)
 
-        self.right_esc.write_register(0x003A, right_val, functioncode=6)
+            if self.use_dual_esc:
+                self.left_esc.write_register(0x003A, left_val, functioncode=6)
 
-        if self.use_dual_esc:
-            self.left_esc.write_register(0x003A, left_val, functioncode=6)
-
-        self.get_logger().info(
-            f"R={right_thrust} N, "
-            f"L={'N/A' if not self.use_dual_esc else f'{left_thrust} N'}"
-        )
+            self.get_logger().info(
+                f"R={right_thrust} N, "
+                f"L={'N/A' if not self.use_dual_esc else f'{left_thrust} N'}"
+            )
+        
+        except Exception as e:
+            self.get_logger().error(f"Modbus write error: {e}")
         
         ## Publish to a topic for logging
         pub_msg = Int32MultiArray()
