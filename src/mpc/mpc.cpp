@@ -41,10 +41,6 @@ public:
         path_sub_ = this->create_subscription<nav_msgs::msg::Path>(
             param_->path_topic, 10,
             std::bind(&MPC::cbPath, this, std::placeholders::_1));
-
-        // odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(     // if using "/wamv/sensors/position/ground_truth_odometry"
-        //     param_->odom_topic, 10,
-        //     std::bind(&MPC::cbOdom, this, std::placeholders::_1));
         
         pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(     // if using "/gt_pose"
             param_->pose_topic, 10,
@@ -53,10 +49,6 @@ public:
         twist_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(    // if using "/wamv/inekf_odom_correction/twist"
             param_->twist_topic, 10,
             std::bind(&MPC::cbTwist, this, std::placeholders::_1));
-        
-        // twist_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        //     param_->twist_topic, 10,
-        //     std::bind(&MPC::cbTwist, this, std::placeholders::_1));
 
         goal_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "/goal_pose", 10,
@@ -81,7 +73,7 @@ public:
         //     RCLCPP_INFO(this->get_logger(), "Path already completed, Awaiting for new path.");
         //     return;
         // }
-        // ───────── 1. if using "/gt_pose" and "/wamv/inekf_odom_correction/twist" ─────────
+        // ───────── using "/gt_pose" and "/wamv/inekf_odom_correction/twist" ─────────
         geometry_msgs::msg::PoseStamped pose_copy;
         {
             std::lock_guard<std::mutex> lock(pose_mutex_);
@@ -102,17 +94,6 @@ public:
         }
         PoseTwistTransform(pose_copy, twist_copy);
 
-        // ───────── 2. if using "/wamv/sensors/position/ground_truth_odometry" ─────────
-        // nav_msgs::msg::Odometry odom_copy;
-        // {
-        //     std::lock_guard<std::mutex> lock(odom_mutex_);
-        //     if (!last_odom_) {
-        //         RCLCPP_INFO(this->get_logger(), "No odometry data received yet");
-        //         return;
-        //     }
-        //     odom_copy = *last_odom_;  // safe copy, unlocks after this scope
-        // }
-        // odomTransform(odom_copy);
 
         // ───────── Initialize Zigzag/Circling waypoints if needed. ─────────
         if (initialized_wp_ && i_wp_ == 0) {
@@ -149,6 +130,7 @@ public:
 
         // ───────── MPC ─────────
         Vector2d u;
+        // std::cout << "Current state: " << x_wrld_.transpose() << std::endl;
         u = eMPC(x_wrld_, X_ref_rt, xi_ref_rt, *param_);
 
         // ───────── Publish thrust commands ─────────
@@ -207,8 +189,14 @@ public:
         if(i_wp_ >= param_->X_ref.rows() - Nt - 1) {
             i_wp_ = param_->X_ref.rows() - Nt - 1;  // Stay at the last waypoint
 
-            RCLCPP_INFO(this->get_logger(), "Goal reached! Station Keeping.");
-            reached_final_ = true;
+            // RCLCPP_INFO(this->get_logger(), "Final Target reached!");
+            if (goalErr_path < param_->goal_tol) {
+                RCLCPP_INFO(this->get_logger(), "Goal reached! 🎉 Station Keeping.");
+                reached_final_ = true;
+                // stopBoat();
+                // plot_mpc(*logger_, *param_);
+                // return;
+            }
         }
         else{
             i_wp_++;
@@ -338,18 +326,6 @@ private:
         std::lock_guard<std::mutex> lock(twist_mutex_);
         last_twist_ = msg;
     }
-
-    // Callback for the odometry subscriber
-    // void cbTwist(const nav_msgs::msg::Odometry::SharedPtr msg)
-    // {
-    //     auto twist_msg = std::make_shared<geometry_msgs::msg::TwistStamped>();
-    //     twist_msg->header = msg->header;
-    //     twist_msg->twist = msg->twist.twist;
-    //     {
-    //         std::lock_guard<std::mutex> lock(twist_mutex_);
-    //         last_twist_ = twist_msg;
-    //     }
-    // }
 
     // Transform the incoming odometry message to create a world state vector.
     void odomTransform(const nav_msgs::msg::Odometry &msg)
@@ -489,10 +465,8 @@ private:
 
     // Subscribers and publishers
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
     rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr twist_sub_;
-    // rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr twist_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
 
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_thrust_pub_;
