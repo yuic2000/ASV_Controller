@@ -19,8 +19,9 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
     const int Noff = Nx * (Nt + 1);
     
     MatrixXd D = MatrixXd::Zero(6, 6);  // Kp, Mq, Nr, Xu, Yv, Zw
-    D.diagonal() << -300, -900, -800, -100, -100, -500;                                               // for vrx wamv
-    // D.diagonal() << -12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0(9))), -77.5544, 0, -250.3037;     // for blueboat model, 28.63 kg
+    D.diagonal() << -25, -50, -25, -100, -100, -250;                                                    // for vrx blueboat
+    // D.diagonal() << -12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0(9))), -77.5544, -71.5750, -250.3037;     // for original blueboat model, 28.63 kg
+    // D.diagonal() << -12.2948, -45.5947, -12.3312 * (1 + 10 * abs(x0(9))), -77.5544, 0, -250.3037;     // for original blueboat model, 28.63 kg
     
     MatrixXd I_inv = I.inverse();
 
@@ -29,15 +30,16 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         MatrixXd D_t = D;
         // D_t(2, 2) -= 12.3312 * (10 * abs(xid(k, 2)));           // for blueboat model
 
-        // for blueboat CAD model, 28.63 kg
+        // ------ setting rigid Mass and Inertia Matrix ------
         MatrixXd Irb(6, 6);
-        Irb << 250.18,    0,     0,      0,      0,        0,
-                 0,    250.18,   0,      0,      0,        0,
-                 0,       0,   250.18,   0,      0,        0,
-                 0,       0,     0,    225.17,  0.12,   0.99,
-                 0,       0,     0,     0.12,  454.1,   0.29,
-                 0,       0,     0,     0.99,   0.29, 499.75;
-        // Irb << 28.63,      0,      0,     0,   -17.66, -0.25,
+        Irb << 30.54,   0,    0,     0,     0,      0,          // for vrx blueboat, 28.784 kg
+                0,    30.54,  0,     0,     0,      0,
+                0,      0,   30.54,  0,     0,      0,
+                0,      0,    0,    5.11, 0.07, -0.27,
+                0,      0,    0,    0.07, 4.74,  0.60,
+                0,      0,    0,   -0.27, 0.60,  4.14; 
+
+        // Irb << 28.63,      0,      0,     0,   -17.66, -0.25,   // for blueboat CAD model, 28.63 kg
         //        0,       28.63,     0,   17.66,    0,   10.79,
         //        0,          0,    28.63,  0.25, -10.79,     0,
         //        0,        17.66,   0.25, 13.87,  -0.35,  6.55,
@@ -98,8 +100,7 @@ void eMPCConstraints(MatrixXd &A, VectorXd &bmin, VectorXd &bmax, const MatrixXd
         Ac.block<6, 6>(6, 6) = H;
         
         MatrixXd Bc = MatrixXd::Zero(12, 2);
-        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 1.0, -1.0, 1, 1, 0, 0, 0, 0).finished();      // for vrx wamv
-        // Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.285, -0.285, 1, 1, 0, 0, 0, 0).finished();  // for blueboat model
+        Bc.block<6, 2>(6, 0) = I_inv * (MatrixXd(6, 2) << 0, 0, 0, 0, 0.285, -0.285, 1, 1, 0, 0, 0, 0).finished();     // for blueboat model
         
         VectorXd b = (G + G2) * x0.segment<6>(7);
         // b(2) += 12.3312 * (10 * abs(xid(k, 2))) * xid(k, 2);     // for blueboat model

@@ -23,8 +23,6 @@ Param::Param(const std::string& yaml_path) {
 
     Nx = 12; 
     Nu = 2; 
-    V_c = 0.0;                      // current speed (m/s)
-    beta_c = 1.0;                   // current direction (rad)
 
     // Mass and Inertia matrix
     // from Blueboat CAD model, 28.63 kg
@@ -35,13 +33,13 @@ Param::Param(const std::string& yaml_path) {
     //       0,    -17.66, -0.25,  34.31,   0,        0,
     //       17.66,   0,   10.79,    0,   71.58,      0,
     //       0.25, -10.79,    0,     0,     0,    57.26;
-    // from VRX WAMV, 250.18 kg, no added mass
-    I << 225.17,  0.12,   0.99,     0,     0,        0,
-          0.12,  454.10,  0.29,     0,     0,        0,
-          0.99,   0.29,  499.75,    0,     0,        0,
-            0,      0,     0,    250.18,   0,        0,
-            0,      0,     0,       0,   250.18,     0,
-            0,      0,     0,       0,     0,    250.18;
+
+    I << 5.11,  0.07, -0.27,   0,    0,        0,          // for vrx blueboat, 28.784 kg
+         0.07,  4.74, -0.60,   0,    0,        0,
+        -0.27, -0.60,  4.14,   0,    0,        0,
+           0,    0,     0,  30.54,   0,        0,
+           0,    0,     0,    0,  30.54,      0,
+           0,    0,     0,    0,    0,    30.54; 
 
 
     // state and control limits
@@ -256,43 +254,6 @@ void Param::waypoints2twists() {
     }
 
 }
-
-// void Param::waypoints2twists() {
-//     MatrixXd waypoints = this->X_ref;
-
-//     MatrixXd xi_ref(1, 6);
-//     xi_ref.row(0) = this->xid_ref.transpose();
-
-//     // Generate twist based on waypoints
-//     for (int k = 0; k < waypoints.rows() - 1; ++k) {
-//         // Get the current and next waypoint
-//         Matrix4d X1 = pose_to_T_matrix(waypoints.row(k));  // Transformation of waypoint k
-//         Matrix4d X2 = pose_to_T_matrix(waypoints.row(k + 1));  // Transformation of waypoint k+1
-
-//         // Compute the relative transformation
-//         Matrix4d delta_X = X1.inverse() * X2;
-
-//         // Compute the twist using logm (logarithm map of the relative transformation)
-//         Matrix4d twist_matrix = delta_X.log() / dt;  // Divide by dt to get the twist
-
-//         // Angular velocity (from skew-symmetric part of matrix)
-//         // Vector3d omega(twist_matrix(2, 1), twist_matrix(0, 2), twist_matrix(1, 0));  
-//         // Vector3d omega(0, 0, 0.1);
-//         Vector3d omega(0, 0, twist_matrix(1, 0));
-
-//         // Linear velocity (from translational part)
-//         // Vector3d v = twist_matrix.block<3, 1>(0, 3);
-//         // Vector3d v(0.5, 0, 0);
-//         Vector3d v(twist_matrix(0, 3), 0, 0);
-
-//         VectorXd twist(6);
-//         twist << omega, v;
-//         xi_ref.conservativeResize(xi_ref.rows() + 1, NoChange);
-//         xi_ref.row(xi_ref.rows() - 1) = twist.transpose();
-//     }
-
-//     this->xi_ref = xi_ref;
-// }
 
 void Param::StationKeeping() {
     double x_start = this->x0_ref[4];
