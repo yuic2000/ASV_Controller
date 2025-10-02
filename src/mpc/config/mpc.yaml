@@ -7,33 +7,35 @@ ros_topic:
 
 
 parameters:
-    goal_tol: 1.0           # m
-    v_surge: 1.0            # m/s
+    goal_tol: 0.5           # m
+    v_surge: 0.5            # m/s
     yaw_rate: 0.1           # rad/s
-    max_thrust: 200.0       # N
-    min_thrust: -100.0      # N
+    max_thrust: 50.0        # N
+    min_thrust: -26.0       # N
+    # max_thrust: 100.0     # N
+    # min_thrust: -50.0     # N
 
 # mpc cost funtion for zigzag and circling
     # MPC cost matrices
+    # P: terminal cost matrix, P * P_scale
+    # Q: stage cost matrix, Q * Q_scale
+    # R: input cost matrix
     # [0:3] is angle: roll, pitch, yaw ,
     # [3:6] is position: x, y, z
     # [6:9] is angular velocity: roll, pitch, yaw,
     # [9:12] is linear velocity: surge (Vx), sway (Vy), heave (Vz),
 cost:
-    P: [1e-5, 1e-5, 250, 50, 50, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
-    Q: [1e-5, 1e-5, 250, 50, 50, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
-    R: [[1e-3, 0], [0, 1e-3]]
-    # P: [1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
-    # Q: [1e-5, 1e-5, 0.5, 10, 10, 1e-5, 1e-5, 1e-5, 1e-5, 1, 1e-5, 1e-5]
-    # R: [[1e-5, 0], [0, 1e-5]]
+    P: [1e-5, 1e-5, 10, 10, 10, 1e-5, 1e-5, 1e-5, 0.1, 1, 1e-5, 1e-5]
+    Q: [1e-5, 1e-5, 10, 10, 10, 1e-5, 1e-5, 1e-5, 0.1, 1, 1e-5, 1e-5]
+    R: [[1e-5, 0], [0, 1e-5]]
+    
     P_scale: 10
     Q_scale: 1
 
 horizon:
     Hz: 20.0
     dt: 0.05
-    Nt: 100
-    # Hz: 25.0         
-    # dt: 0.04
-    # Nt: 125
+    # Nt: 100       # 0.05 * 100 = 5s
+    Nt: 30          # 0.05 * 30 = 1.5s
+
     Nsim: 1625      # (60 + dt * Nt) / dt, used only for setting trajectory manually
