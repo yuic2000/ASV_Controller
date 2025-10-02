@@ -10,7 +10,7 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     const int n_total = (Nt + 1) * Nx + Nt * Nu;    // 1412
 
 // start
-    // auto timer0 = std::chrono::high_resolution_clock::now();
+    // auto start_time = std::chrono::high_resolution_clock::now();
 
     MatrixXd Xd = MatrixXd::Zero(4, 4);
     Xd.block<3, 3>(0, 0) = quat2rotm(xd.head<4>());
@@ -52,8 +52,8 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
     osqp_set_default_settings(settings);
     settings->verbose = false;
     // settings->max_iter = 1500;
-    settings->eps_abs = 1e-2;
-    settings->eps_rel = 1e-2;
+    settings->eps_abs = 1e-3;
+    settings->eps_rel = 1e-3;
     settings->polishing = true;
     settings->time_limit = 3.5e-2;        // 0.05s, 50 ms, should test in Jetson
 
@@ -81,8 +81,16 @@ VectorXd eMPC(const VectorXd& x0, const VectorXd& xd, const MatrixXd& xid,
 
     // Solve the optimization problem
     if(!exitflag) exitflag = osqp_solve(solver);
+
+    // auto end_time = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> solving_time = end_time - start_time;    
     // std::cout << "exitflag: " << exitflag << std::endl;
-    // // OSQP status
+    // OSQP status
+    // if (!exitflag && solver->info) {
+    //     std::cout << "Solver iterations: " << solver->info->iter << std::endl;
+    //     std::cout << "Solving time: " << solving_time.count() << " seconds" << std::endl;
+    // }
+    
     // if (!exitflag) {
     //     // Solver ran — now inspect status
     //     if (solver->info) {
